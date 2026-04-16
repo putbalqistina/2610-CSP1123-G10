@@ -4,13 +4,13 @@ import sqlite3
 app = Flask(__name__)
 app.secret_key = "secretkey"
 
-# Connect DB
+# connect with database
 def get_db():
     conn = sqlite3.connect("database.db")
     conn.row_factory = sqlite3.Row
     return conn
 
-# Create table (run once)
+# create table
 def init_db():
     conn = get_db()
     conn.execute('''
