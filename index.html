@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AssignMate | Edit Profile</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="editprofile-card">
+        <h1>Edit Profile</h1>
+        
+        <div class="avatar-wrapper">
+            <img src="profile.jpeg" alt="Profile" class="avatar">
+            <label for="upload-photo" class="edit-icon">
+                ✎
+                <input type="file" id="upload-photo" style="display:none">
+            </label>
+        </div>
+
+        <div class="profile-info">
+            <h3 id="display-name">Name's AssignMate</h3>
+            <p>MMU STUDENT</p>
+        </div>
+
+       <form class="profile-form">
+            <div class="input-group">
+                <input type="text" placeholder="Name">
+            </div>
+
+            <div class="input-group">
+                <input type="text" placeholder="Username">
+            </div>
+
+            <div class="input-group">
+                <input type="text" placeholder="Bio">
+            </div>
+
+            <label class="gender-label">Enter your gender:</label>
+            <div class="gender-group">
+                <input type="radio" name="gender" value="male" id="male">
+                <label for="male">Male</label>
+                
+                <input type="radio" name="gender" value="female" id="female">
+                <label for="female">Female</label>
+                
+                <input type="radio" name="gender" value="others" id="others">
+                <label for="others">Others</label>
+            </div>
+
+            <button type="submit" class="btn-edit">Save Changes</button>
+        </form>
+    </div>
+    <script>
+        const inputName = document.getElementById('input-name');
+        const displayName = document.getElementById('display-name');
+
+        inputName.addEventListener('input', function() {
+            if (this.value.trim() === "") {
+                displayName.textContent = "Name's AssignMate";
+            } else {
+                displayName.textContent = this.value + "'s AssignMate";
+            }
+        });
+    </script>
+</body>
+</html>
