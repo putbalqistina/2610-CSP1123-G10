@@ -65,9 +65,5 @@ def register():
 
     return render_template("register.html")
 
-@app.route("/edit-profile")
-def edit_profile():
-    return render_template("index.html")
-
 if __name__ == "__main__":
     app.run(debug=True)
