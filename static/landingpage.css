@@ -38,7 +38,7 @@ body {
 /* Hero Section */
 .hero {
     height: 90vh;
-    background: url('images/background.png');
+    background: url("/static/images/background.png");
     background-size: cover;        /* fill screen */
     background-position: center;   /* center image */
     background-repeat: no-repeat;  /* no tiling */
@@ -96,5 +96,5 @@ footer {
 
 @font-face {
     font-family: 'Biro_Script_reduced';
-    src: url('fonts/Biro_Script_reduced.ttf');
+    src: url('/static/fonts/Biro_Script_reduced.ttf');
 }

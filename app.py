@@ -27,25 +27,28 @@ init_db()
 
 @app.route("/")
 def home():
-    return render_template("login.html")
+    return render_template("landingpage.html")
 
-@app.route("/login", methods=["POST"])
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    email = request.form["email"]
-    password = request.form["password"]
+    if request.method == "POST":
+        email = request.form["email"]
+        password = request.form["password"]
 
-    conn = get_db()
-    user = conn.execute(
-        "SELECT * FROM users WHERE email=? AND password=?",
-        (email, password)
-    ).fetchone()
-    conn.close()
+        conn = get_db()
+        user = conn.execute(
+            "SELECT * FROM users WHERE email=? AND password=?",
+            (email, password)
+        ).fetchone()
+        conn.close()
 
-    if user:
-        session["user"] = email
-        return "Login Successful ✅"
-    else:
-        return "Invalid credentials ❌"
+        if user:
+            session["user"] = email
+            return redirect("/dashboard")
+        else:
+            return "Invalid credentials ❌"
+
+    return render_template("login.html")
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -61,7 +64,7 @@ def register():
         conn.commit()
         conn.close()
 
-        return redirect("/")
+        return redirect("/login")
 
     return render_template("register.html")
 

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Landing Page</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='landingpage.css') }}">
     <link href="https://googleapis.com" rel="stylesheet">
 </head>
 <body>
@@ -26,7 +26,7 @@
         <div class="hero-content">
             <h2>Plan, Track, Complete with Ease</h2>
             <p>One place to organise all your tasks.</p>
-            <a href="#" class="btn">Get Started</a>
+            <a href="{{ url_for('login') }}" class="btn">Get Started</a>
         </div>
     </section>
 
