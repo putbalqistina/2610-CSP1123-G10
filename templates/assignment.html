@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Assignment</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+</head>
+
+<body>
+
+<div class="dashboard">
+
+    <div class="topbar">
+        <div>AssignMate</div>
+        <input type="text" placeholder="Search 🔍︎">
+        <div>Notifications | Filter</div>
+        <div>⚙️</div>
+    </div>
+
+    <h1>{{ title }}</h1>
+
+    <div class="cards" style="grid-template-columns: 2fr 1fr;">
+
+        <div class="card">
+            <h3>Assignment Description</h3>
+            <p>{{ description }}</p>
+        </div>
+
+        <div>
+            <div class="card" style="margin-bottom:15px;">
+                <h3>Comments</h3>
+                {% for comment in comments %}
+                    <p>• {{ comment }}</p>
+                {% endfor %}
+            </div>
+
+            <div class="card">
+                <h3>Attachment</h3>
+                <p>{{ attachment }}</p>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>

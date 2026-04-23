@@ -29,6 +29,22 @@ def subject(code):
     assignments = assignments_data.get(code, [])
     return render_template('subject.html', code=code, assignments=assignments)
 
+@app.route('/assignment/<title>')
+def assignment(title):
+
+    # dummy data dulu
+    description = "This is assignment description"
+    comments = ["my part - done", "need to finish before 20/4"]
+    attachment = "sample.png"
+
+    return render_template(
+        'assignment.html',
+        title=title,
+        description=description,
+        comments=comments,
+        attachment=attachment
+    )
+
 
 if __name__ == '__main__':
     app.run(debug=True)
