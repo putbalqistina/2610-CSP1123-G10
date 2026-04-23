@@ -6,6 +6,12 @@
 </head>
 <body>
 
+ {% if error %}
+ <div class="popup">
+    {{ error }}
+ </div>
+ {% endif %}
+    
 <div class="container">
     <h2>Create Account</h2>
 

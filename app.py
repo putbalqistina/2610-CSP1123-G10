@@ -32,7 +32,7 @@ def home():
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        email = request.form["email"]
+        email = request.form["email"].strip().lower()
         password = request.form["password"]
 
         conn = get_db()
@@ -53,10 +53,21 @@ def login():
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        email = request.form["email"]
+        email = request.form["email"].strip().lower()
         password = request.form["password"]
 
         conn = get_db()
+
+        # 🔍 Check if email already exists
+        existing_user = conn.execute(
+            "SELECT * FROM users WHERE email = ?",
+            (email,)
+        ).fetchone()
+
+        if existing_user:
+            conn.close()
+            return render_template("register.html", error="Email already registered!")
+
         conn.execute(
             "INSERT INTO users (email, password) VALUES (?, ?)",
             (email, password)
@@ -64,7 +75,7 @@ def register():
         conn.commit()
         conn.close()
 
-        return redirect("/login")
+        return redirect("/")
 
     return render_template("register.html")
 
