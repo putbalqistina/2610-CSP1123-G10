@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Subject</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+</head>
+
+<body>
+
+<div class="dashboard">
+
+    <!-- Topbar -->
+    <div class="topbar">
+        <div>AssignMate</div>
+        <input type="text" placeholder="Search 🔍︎">
+        <div>Notifications | Filter</div>
+        <div>🌣</div>
+    </div>
+
+    <!-- Title -->
+    <h1>{{ code }} Assignments</h1>
+
+    <!-- Cards -->
+    <div class="cards">
+        {% for assignment in assignments %}
+        <a href="/assignment/{{ assignment }}">
+            <div class="card">
+                {{ assignment }}
+            </div>
+        </a>
+    {% endfor %}
+
+    </div>
+
+</div>
+
+</body>
+</html>

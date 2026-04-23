@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard</title>
+
+<link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+</head>
+
+<body>
+
+<div class="dashboard">
+
+    <!-- Topbar -->
+    <div class="topbar">
+        <div>AssignMate</div>
+        <input type="text" placeholder="Search 🔍︎">
+        <div>Notifications | Filter</div>
+        <div>🌣</div>
+    </div>
+
+    <!-- Title -->
+    <h1>Your Dashboard</h1>
+
+    <!-- Cards -->
+    <div class="cards">
+        {% for subject in subjects %}
+            <a href="/subject/{{ subject.code }}">
+                <div class="card">
+                    {{ subject.code }} - {{ subject.name }}
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,55 @@
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f3f4f6;
+}
+
+/* remove link underline */
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* Topbar */
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 30px 0;
+    padding: 0 40px;
+}
+
+.topbar input {
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+/* Title */
+h1 {
+    font-size: 20px;
+    margin-bottom: 40px;
+    padding: 0 40px;
+}
+
+/* Cards */
+.cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    padding: 0 40px;
+}
+
+.card {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: 0.3s;
+    min-height: 120px;
+}
+
+.card:hover {
+    background: #e5e7eb;
+    transform: translateY(-3px);
+}
