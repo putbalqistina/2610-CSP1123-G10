@@ -79,7 +79,7 @@ def register():
 
         return redirect("/login")
 
-    return render_template("register.html")
+    return render_template("register.html", success=True)
 
 # dummy subjects
 subjects = [
