@@ -66,15 +66,6 @@ def home():
 @app.route("/login", methods=["GET", "POST"])
 def login():
 
-    email = request.form["email"]
-    password = request.form["password"]
-    conn = get_db()
-    user = conn.execute(
-        "SELECT * FROM users WHERE email=? AND password=?",
-        (email, password)
-    ).fetchone()
-    conn.close()
-
     if request.method == "POST":
         login = request.form["login"].strip().lower()
         password = request.form["password"]
