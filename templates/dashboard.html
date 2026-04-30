@@ -9,6 +9,8 @@
 
 <body>
 
+    
+<button class="add-btn" onclick="window.location.href='/add_assignment'">+</button>
 <div class="dashboard">
 
     <!-- Topbar -->
@@ -16,7 +18,11 @@
         <div>AssignMate</div>
         <input type="text" placeholder="Search 🔍︎">
         <div>Notifications | Filter</div>
-        <div>🌣</div>
+        <div class="settings-link">
+        <a href="/edit_profile" style="text-decoration: none; cursor: pointer;">
+            🌣
+        </a>
+    </div>
     </div>
 
     <!-- Title -->
@@ -24,6 +30,7 @@
 
     <!-- Cards -->
     <div class="cards">
+     {%if subjects %}
         {% for subject in subjects %}
             <a href="/subject/{{ subject.code }}">
                 <div class="card">
@@ -31,6 +38,9 @@
                 </div>
             </a>
         {% endfor %}
+        {% else %}
+        <p> No Assignments yet. Click + to add.</p>
+        {% endif %}
     </div>
 
 </div>

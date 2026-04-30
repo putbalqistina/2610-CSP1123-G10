@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AssignMate | Edit Profile</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style-editprofile.css') }}">
+</head>
+<body>
+
+    <div class="editprofile-card">
+        <h1>Edit Profile</h1>
+        
+        <div class="avatar-wrapper">
+            <img src="https://ui-avatars.com/api/?name=User&background=random" alt="Profile" class="avatar" id="profile-pic">
+            <label for="upload-photo" class="edit-icon">
+                ✎
+                <input type="file" id="upload-photo" style="display:none" accept="image/*">
+            </label>
+        </div>
+
+        <div class="profile-info">
+            <h3 id="display-name">Name's AssignMate</h3>
+            <p>MMU STUDENT</p>
+        </div>
+
+       <form class="profile-form">
+            <div class="input-group">
+                <input type="text"  method="POST name="full_name" placeholder="Name">
+            </div>
+
+            <div class="input-group">
+                <input type="text" name="username" placeholder="Username">
+            </div>
+
+            <div class="input-group">
+                <input type="text" name="bio" placeholder="Bio">
+            </div>
+
+            <label class="gender-label">Enter your gender:</label>
+            <div class="gender-group">
+                <input type="radio" name="gender" value="male" id="male">
+                <label for="male">Male</label>
+                
+                <input type="radio" name="gender" value="female" id="female">
+                <label for="female">Female</label>
+                
+                <input type="radio" name="gender" value="others" id="others">
+                <label for="others">Others</label>
+            </div>
+
+            <button type="submit" class="btn-edit">Save Changes</button>
+        </form>
+    </div>
+    <script>
+        // 1. LOGIK UNTUK TUKAR NAMA DI HEADER
+        const inputName = document.getElementById('input-name');
+        const displayName = document.getElementById('display-name');
+
+        if (inputName) {
+            inputName.addEventListener('input', function() {
+                if (this.value.trim() === "") {
+                    displayName.textContent = "Name's AssignMate";
+                } else {
+                    displayName.textContent = this.value + "'s AssignMate";
+                }
+            });
+        }
+
+        // 2. LOGIK UNTUK PREVIEW GAMBAR (Di luar fungsi inputName)
+        const uploadPhoto = document.getElementById('upload-photo');
+        const profilePic = document.getElementById('profile-pic');
+
+        uploadPhoto.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    profilePic.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+</body>
+</html>

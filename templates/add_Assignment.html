@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AssignMate | Add New Assignment</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style-add_assignment.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+            </span> <strong>AssignMate</strong>
+            </div>
+            <div class="nav-tools">
+                <div class="search-bar">
+                    <input type="text" placeholder="Search 🔍︎">
+                </div>
+                <span>Notifications</span>
+                <div class="filter">Filter ⌄</div>
+                <div class="settings-link">
+        <a href="/edit_profile" style="text-decoration: none; cursor: pointer;">
+            🌣
+        </a>
+    </div>
+            </div>
+        </header>
+
+        <main>
+            <h1>ADD NEW ASSIGNMENT</h1>
+
+            <form class="assignment-form">
+                <div class="row">
+                    <div class="input-group">
+                        <label>Subject*</label>
+                        <input type="text" name="subject" placeholder="Enter subject name" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Assignment Title*</label>
+                        <input type="text" name="title" placeholder="Enter assignment or project name" required>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Description*</label>
+                    <input type="text" name="description" placeholder="Description/note" ></input>
+                </div>
+
+                <div class="deadline-container">
+                   <div class="input-group">
+                    <label>Deadline*</label>
+                    <input type="date" id="deadline" name="deadline" class="deadline-input" required>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button type="button" class="btn-cancel" onclick="window.location.href='/dashboard'">CANCEL</button>
+                    <button type="submit" class="btn-add">ADD ASSIGNMENT</button>
+                </div>
+            </form>
+        </main>
+    </div>
+<script>
+        // Get the date input element by ID
+        const deadlineInput = document.getElementById('deadline');
+        
+        // Get the current date in ISO format (YYYY-MM-DD)
+        const today = new Date().toISOString().split('T')[0];
+        
+        // Set the minimum date that can be selected to today
+        deadlineInput.min = today;
+    </script>
+</body>
+</body>
+</html>
