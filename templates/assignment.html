@@ -24,7 +24,12 @@
 
         <div class="card">
             <h3>Assignment Description</h3>
-            <p>{{ description }}</p>
+
+            <form method="POST">
+                <textrea name="description" rows="4" style="width:100;">{{ description }}</textrea>
+                <button type="submit">Save</button>
+
+            </form>
         </div>
 
         <div>
@@ -33,11 +38,25 @@
                 {% for comment in comments %}
                     <p>• {{ comment }}</p>
                 {% endfor %}
+
+                <form method="POST">
+                    <input type="text" name="comment" placeholder="Add note..." style="width:100%">
+                    <button type="submit">Add</button>
+                </form>
             </div>
 
             <div class="card">
                 <h3>Attachment</h3>
-                <p>{{ attachment }}</p>
+                {% if attachment %}
+                    <p>📁 {{ attachment }}</p>
+                {% else %}
+                    <p>No file uploaded</p>
+                {% endif %}
+
+                <form method="POST" enctype="multipart/form-data">
+                    <input type="file" name="file">
+                    <button type="submit">Upload</button>
+                </form>
             </div>
         </div>
 

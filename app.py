@@ -1,9 +1,9 @@
 from flask import Flask, render_template, request, redirect, url_for
-
+import os
 app = Flask(__name__)
 
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
 # dummy subjects
 subjects = [
     {"code": "CSP1123", "name": "Mini IT Project"},
@@ -27,9 +27,7 @@ assignments_data = {
     "LCT1113": ["Blended Learning Week 2", "20% Presentation", "Debate Points"]
 }
 
-@app.route('/add-assignment')
-def add_assignment():
-    return "<h1>Page Not Found (UI coming soon)</h1>"
+
 
 @app.route('/dashboard')
 def dashboard():
@@ -42,7 +40,10 @@ def subject(code):
     return render_template('subject.html', code=code, assignments=assignments)
 
 
-import os
+@app.route('/add-assignment')
+def add_assignment():
+    return "<h1>Page Not Found (UI coming soon)</h1>"
+
 
 @app.route('/assignment/<title>', methods=["GET", "POST"])
 def assignment(title):
