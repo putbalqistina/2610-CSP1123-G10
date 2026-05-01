@@ -28,7 +28,7 @@
     <div class="cards">
      {%if subjects %}
         {% for subject in subjects %}
-            <a href="/subject/{{ subject.code }}">
+            <a href="{{ url_for('subject', code=subject.code) }}">
                 <div class="card">
                     {{ subject.code }} - {{ subject.name }}
                 </div>
@@ -39,7 +39,7 @@
         {% endif %}
     </div>
 
-    <button class="add-btn" onclick="window.location.href='/add-assignment'">+</button>
+    <button class="add-btn" onclick="window.location.href='/add-assignment'"> ✚</button>
 
 </div>
 
