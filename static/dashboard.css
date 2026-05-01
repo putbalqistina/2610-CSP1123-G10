@@ -87,3 +87,11 @@ h1 {
     background-color: #45a049;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
 }
+
+.alert-box {
+    background: #fff3cd;
+    border: 1px solid #ffe69c;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+}

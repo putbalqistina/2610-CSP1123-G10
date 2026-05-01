@@ -11,6 +11,16 @@
 
     
 <button class="add-btn" onclick="window.location.href='/add_assignment'">+</button>
+
+{% if upcoming %}
+<div class="alert-box">
+    <h3>Upcoming Deadlines</h3>
+    {% for item in upcoming %}
+        <p>{{ item.title }} is due on {{ item.deadline }}</p>
+    {% endfor %}
+</div>
+{% endif %}
+
 <div class="dashboard">
 
     <!-- Topbar -->
