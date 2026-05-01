@@ -87,3 +87,60 @@ h1 {
     background-color: #45a049;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
 }
+
+/* Container Dropdown */
+.dropdown {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+}
+
+/* Isi Dropdown (Sembunyi secara default) */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    background-color: #ffffff;
+    min-width: 200px;
+    box-shadow: 0px 8px 16px rgba(0,0,0,0.1);
+    z-index: 1;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    text-align: left;
+}
+
+/* Tunjukkan dropdown bila hover atau klik */
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+/* Styling dalaman */
+.filter-group {
+    margin-bottom: 10px;
+}
+
+.filter-group label {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.filter-group select {
+    width: 100%;
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+.apply-btn {
+    width: 100%;
+    background-color: #2e4a3d; /* Warna ikut tema AssignMate */
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 5px;
+}

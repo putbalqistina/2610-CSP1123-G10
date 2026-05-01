@@ -28,15 +28,16 @@ def init_db():
     ''')
 
     conn.execute('''
-        CREATE TABLE IF NOT EXISTS assignments (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            subject TEXT NOT NULL,
-            title TEXT NOT NULL,
-            deadline TEXT NOT NULL,
-            user_email TEXT NOT NULL,
-            FOREIGN KEY (user_email) REFERENCES users (email)
-        )
-    ''') 
+    CREATE TABLE IF NOT EXISTS assignments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        subject TEXT NOT NULL,
+        title TEXT NOT NULL,
+        deadline TEXT NOT NULL,
+        status TEXT DEFAULT 'Not Completed', 
+        user_email TEXT NOT NULL,
+        FOREIGN KEY (user_email) REFERENCES users (email)
+    )
+''')
 
     conn.commit()
     conn.close()
@@ -143,8 +144,36 @@ def add_assignment():
 
 @app.route('/dashboard')
 def dashboard():
-    return render_template('dashboard.html', subjects=subjects)
+    user_email = session.get('user')
+    if not user_email:
+        return redirect("/login")
 
+    subject_filter = request.args.get('subject', 'All')
+    status_filter = request.args.get('status', 'All')
+    
+    conn = get_db()
+    
+    # Query asas: Cari assignment milik user tersebut
+    query = "SELECT * FROM assignments WHERE user_email = ?"
+    params = [user_email]
+
+    # Filter 1: Subject
+    if subject_filter and subject_filter != "All":
+        query += " AND subject = ?"
+        params.append(subject_filter)
+
+
+    # Susun ikut deadline yang paling dekat
+    query += " ORDER BY deadline ASC"
+
+    assignments = conn.execute(query, params).fetchall()
+    conn.close()
+
+    # Hantar 'subjects' (senarai dummy) dan data filter supaya UI tahu apa yang tengah dipilih
+    return render_template('dashboard.html', 
+                           assignments=assignments, 
+                           subjects=subjects, 
+                           sel_subject=subject_filter,)
 
 @app.route('/subject/<code>')
 def subject(code):

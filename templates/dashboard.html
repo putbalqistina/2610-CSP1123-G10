@@ -14,16 +14,39 @@
 <div class="dashboard">
 
     <!-- Topbar -->
-    <div class="topbar">
-        <div>AssignMate</div>
-        <input type="text" placeholder="Search 🔍︎">
-        <div>Notifications | Filter</div>
+<div class="topbar">
+    <div>AssignMate</div>
+    
+    <input type="text" placeholder="Search 🔍︎">
+
+    <!-- Kelompok Kanan: Filter & Settings -->
+    <div style="display: flex; align-items: center; gap: 15px;">
+        
+        <!-- Dropdown Filter -->
+        <div class="nav-item dropdown">
+            <span class="filter-btn">Notifications | Filter ▾</span>
+            <div class="dropdown-content">
+                <div class="filter-group">
+                    <label>Subject</label>
+                    <select>
+                        <option>All Subjects</option>
+                        {% for s in subjects %}
+                            <option>{{ s.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <button type="button" class="apply-btn">Apply Filter</button>
+            </div>
+        </div>
+
+        <!-- Ikon Edit Profile (Settings) -->
         <div class="settings-link">
-        <a href="/edit_profile" style="text-decoration: none; cursor: pointer;">
-            🌣
-        </a>
+            <a href="/edit_profile" style="text-decoration: none; cursor: pointer; font-size: 20px;">
+                🌣
+            </a>
+        </div>
     </div>
-    </div>
+</div>
 
     <!-- Title -->
     <h1>Your Dashboard</h1>
@@ -44,6 +67,7 @@
     </div>
 
 </div>
+
 
 </body>
 </html>
