@@ -25,7 +25,7 @@
     <!-- Cards -->
     <div class="cards">
         {% for assignment in assignments %}
-        <a href="/assignment/{{ assignment }}">
+        <a href="{{ url_for('assignment', title=assignment) }}">
             <div class="card">
                 {{ assignment }}
             </div>

@@ -59,31 +59,105 @@ h1 {
     bottom: 30px;
     right: 30px;
 
-    width: 60px;
-    height: 60px;
+    width: 65px;
+    height: 65px;
 
     border-radius: 50%;
+    border: none;
 
-    background-color: #4CAF50;
+    background: linear-gradient(135deg, #4CAF50, #2e7d32);
     color: white;
 
-    font-size: 30px;
+    font-size: 32px;
     font-weight: bold;
 
-    border: none;
     cursor: pointer;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.25);
 
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
 }
 
+/* hover effect */
 .add-btn:hover {
-    transform: scale(1.1);
-    background-color: #45a049;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    transform: translateY(-5px) scale(1.08);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+}
+
+/* click effect */
+.add-btn:active {
+    transform: scale(0.95);
+}
+
+/* glow effect */
+.add-btn::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: rgba(76, 175, 80, 0.4);
+    opacity: 0;
+    transition: 0.3s;
+}
+
+.add-btn:hover::after {
+    opacity: 1;
+    transform: scale(1.4);
+}
+
+/* base button */
+.btn {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+}
+
+/* SAVE button */
+.btn-save {
+    background: #4CAF50;
+    color: white;
+}
+
+.btn-save:hover {
+    background: #43a047;
+    transform: translateY(-2px);
+}
+
+/* ADD button */
+.btn-add {
+    background: #2196F3;
+    color: white;
+}
+
+.btn-add:hover {
+    background: #1e88e5;
+    transform: translateY(-2px);
+}
+
+/* UPLOAD button */
+.btn-upload {
+    background: #9c27b0;
+    color: white;
+}
+
+.btn-upload:hover {
+    background: #8e24aa;
+    transform: translateY(-2px);
+}
+
+/* click effect */
+.btn:active {
+    transform: scale(0.95);
 }
