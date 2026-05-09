@@ -31,5 +31,15 @@
 
 </div>
 
+{% if success %}
+<div class="modal-overlay">
+    <div class="modal-box">
+        <h3>Registration Successful 🎉</h3>
+        <p>Your account has been created.</p>
+        <button onclick="window.location.href='/'">OK</button>
+    </div>
+</div>
+{% endif %}
+
 </body>
 </html>

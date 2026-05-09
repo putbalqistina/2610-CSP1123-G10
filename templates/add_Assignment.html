@@ -11,14 +11,32 @@
     <div class="container">
         <header>
             <div class="logo">
-            <strong>AssignMate</strong>
+
+            </span> <strong>AssignMate</strong>
+            </div>
+            <div class="nav-tools">
+                <div class="search-bar">
+                    <input type="text" placeholder="Search 🔍︎">
+                </div>
+                <span>Notifications</span>
+                <div class="filter">Filter ⌄</div>
+                <div class="settings-link">
+        <a href="/edit_profile" style="text-decoration: none; cursor: pointer;">
+            🌣
+        </a>
+    </div>
+
             </div>
         </header>
 
         <main>
             <h1>ADD NEW ASSIGNMENT</h1>
 
+
             <form class="assignment-form" method="POST">
+
+               <form class="assignment-form" action="/add_assignment" method="POST">
+
                 <div class="row">
                     <div class="input-group">
                         <label>Subject*</label>
@@ -56,7 +74,9 @@
         // Get the current date in ISO format (YYYY-MM-DD)
         const today = new Date().toISOString().split('T')[0];
         
-        // Setkan tarikh minimum yang boleh dipilih kepada hari ini
+
+        // Set the minimum date that can be selected to today
+
         deadlineInput.min = today;
     </script>
 </body>

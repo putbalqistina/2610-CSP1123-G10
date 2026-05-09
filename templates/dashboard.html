@@ -11,16 +11,13 @@
 
     
 <button class="add-btn" onclick="window.location.href='/add_assignment'">+</button>
+
 <div class="dashboard">
 
     <!-- Topbar -->
-<div class="topbar">
-    <div>AssignMate</div>
-    
-    <input type="text" placeholder="Search 🔍︎">
-
-    <!-- Kelompok Kanan: Filter & Settings -->
-    <div style="display: flex; align-items: center; gap: 15px;">
+    <div class="topbar">
+        <div>AssignMate</div>
+        <input type="text" placeholder="Search 🔍︎">
         
         <!-- Dropdown Filter -->
         <div class="nav-item dropdown">
@@ -39,6 +36,8 @@
             </div>
         </div>
 
+        <div class="settings-link">
+
         <!-- Ikon Edit Profile (Settings) -->
         <div class="settings-link">
             <a href="/edit_profile" style="text-decoration: none; cursor: pointer; font-size: 20px;">
@@ -47,27 +46,44 @@
         </div>
     </div>
 </div>
+    </div>
+    </div>
+    <!-- Kelompok Kanan: Filter & Settings -->
+    <div style="display: flex; align-items: center; gap: 15px;">
+
+    </div>
+</div>
+
+{% if upcoming %}
+<div class="alert-box">
+    <h3>Upcoming Deadlines</h3>
+    {% for item in upcoming %}
+        <p>{{ item.title }} is due on {{ item.deadline }}</p>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="dashboard">
+
 
     <!-- Title -->
     <h1>Your Dashboard</h1>
 
     <!-- Cards -->
     <div class="cards">
-     {%if subjects %}
-        {% for subject in subjects %}
-            <a href="/subject/{{ subject.code }}">
+    {% if subjects %}
+        {% for s in subjects %}
+            <a href="/subject/{{ s.subject }}">
                 <div class="card">
-                    {{ subject.code }} - {{ subject.name }}
+                    {{ s.subject }}
                 </div>
             </a>
         {% endfor %}
-        {% else %}
-        <p> No Assignments yet. Click + to add.</p>
-        {% endif %}
-    </div>
-
+    {% else %}
+        <p>No Assignments yet. Click + to add.</p>
+    {% endif %}
 </div>
 
-
+</div>
 </body>
 </html>

@@ -88,6 +88,7 @@ h1 {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
 }
 
+
 /* Container Dropdown */
 .dropdown {
     position: relative;
@@ -143,4 +144,11 @@ h1 {
     border-radius: 4px;
     cursor: pointer;
     margin-top: 5px;
+
+.alert-box {
+    background: #fff3cd;
+    border: 1px solid #ffe69c;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
 }

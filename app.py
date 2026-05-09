@@ -28,16 +28,15 @@ def init_db():
     ''')
 
     conn.execute('''
-    CREATE TABLE IF NOT EXISTS assignments (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        subject TEXT NOT NULL,
-        title TEXT NOT NULL,
-        deadline TEXT NOT NULL,
-        status TEXT DEFAULT 'Not Completed', 
-        user_email TEXT NOT NULL,
-        FOREIGN KEY (user_email) REFERENCES users (email)
-    )
-''')
+        CREATE TABLE IF NOT EXISTS assignments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            subject TEXT NOT NULL,
+            title TEXT NOT NULL,
+            deadline TEXT NOT NULL,
+            user_email TEXT NOT NULL,
+            FOREIGN KEY (user_email) REFERENCES users (email)
+        )
+    ''') 
 
     conn.commit()
     conn.close()
@@ -60,9 +59,16 @@ assignments_data = {
     "LCT1113": ["Blended Learning Week 2", "20% Presentation", "Debate Points"]
 }
 
-@app.route("/")
-def home():
-    return render_template("landingpage.html")
+
+@app.route('/')
+def index():
+    # Semak jika user sudah login
+    if 'user' in session:
+        return redirect('/dashboard') # Jika dah login, pergi dashboard
+    
+    # Jika belum login, hantar ke page login (atau register)
+    # Jangan terus render dashboard.html di sini!
+    return redirect('/login')
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -81,7 +87,7 @@ def login():
 
         if user:
             session["user"] = login
-            return "Login Successful"
+            return redirect("/dashboard")
         else:
             return "Invalid credentials ❌"
 
@@ -124,12 +130,10 @@ def add_assignment():
         return redirect("/login")
 
     if request.method == 'POST':
-        # Retrieve data from the HTML form 'name' attributes
         subject = request.form.get('subject')
         title = request.form.get('title')
         deadline = request.form.get('deadline')
         
-        # Connect to DB and insert the record
         conn = get_db()
         conn.execute(
             "INSERT INTO assignments (subject, title, deadline, user_email) VALUES (?, ?, ?, ?)",
@@ -137,75 +141,22 @@ def add_assignment():
         )
         conn.commit()
         conn.close()
-
+        
         return redirect("/dashboard")
 
     return render_template("add_assignment.html")
 
 @app.route('/dashboard')
+
 def dashboard():
-    user_email = session.get('user')
-    if not user_email:
-        return redirect("/login")
 
-    subject_filter = request.args.get('subject', 'All')
-    status_filter = request.args.get('status', 'All')
-    
-    conn = get_db()
-    
-    # Query asas: Cari assignment milik user tersebut
-    query = "SELECT * FROM assignments WHERE user_email = ?"
-    params = [user_email]
-
-    # Filter 1: Subject
-    if subject_filter and subject_filter != "All":
-        query += " AND subject = ?"
-        params.append(subject_filter)
-
-
-    # Susun ikut deadline yang paling dekat
-    query += " ORDER BY deadline ASC"
-
-    assignments = conn.execute(query, params).fetchall()
-    conn.close()
-
-    # Hantar 'subjects' (senarai dummy) dan data filter supaya UI tahu apa yang tengah dipilih
-    return render_template('dashboard.html', 
-                           assignments=assignments, 
-                           subjects=subjects, 
-                           sel_subject=subject_filter,)
+    return render_template('dashboard.html', subjects=subjects)
 
 @app.route('/subject/<code>')
 def subject(code):
     assignments = assignments_data.get(code, [])
     return render_template('subject.html', code=code, assignments=assignments)
 
-@app.route("/edit_profile", methods=["GET", "POST"])
-def edit_profile():
-    if "user" not in session:
-        return redirect(url_for("login"))
-
-    user_email = session["user"]
-    conn = get_db()
-
-    if request.method == "POST":
-        full_name = request.form.get("full_name")
-        bio = request.form.get("bio")
-        gender = request.form.get("gender")
-        
-        conn.execute('''
-            UPDATE users 
-            SET full_name = ?, bio = ?, gender = ? 
-            WHERE email = ?
-        ''', (full_name, bio, gender, user_email))
-        conn.commit()
-        conn.close()
-        return redirect(url_for("dashboard"))
-
-    # get user data to pre-fill the form
-    user_data = conn.execute("SELECT * FROM users WHERE email = ?", (user_email,)).fetchone()
-    conn.close()
-    return render_template("index.html", user=user_data)
 
 if __name__ == '__main__':
     app.run(debug=True)
