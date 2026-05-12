@@ -9,8 +9,10 @@
 
 <body>
 
+
     
 <button class="add-btn" onclick="window.location.href='/add_assignment'">+</button>
+
 
 <div class="dashboard">
 
@@ -20,30 +22,35 @@
         <input type="text" placeholder="Search 🔍︎">
         
         <!-- Dropdown Filter -->
-        <div class="nav-item dropdown">
+    <div class="nav-item dropdown">
             <span class="filter-btn">Notifications | Filter ▾</span>
-            <div class="dropdown-content">
-                <div class="filter-group">
-                    <label>Subject</label>
-                    <select>
-                        <option>All Subjects</option>
-                        {% for s in subjects %}
-                            <option>{{ s.name }}</option>
-                        {% endfor %}
-                    </select>
+                <div class="dropdown-content">
+                    <form action="/dashboard" method="GET">
+                    <div class="filter-group">
+                        <label>Subject</label>
+                        <select name="subject_filter">
+                           <option value="All">All Subjects</option>
+                    {% for s in subjects %}
+                        <option value="{{ s.code }}">{{ s.name }}</option>
+                    {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="apply-btn">Apply Filter</button>
+                    </form>
                 </div>
-                <button type="button" class="apply-btn">Apply Filter</button>
             </div>
-        </div>
+
 
         <div class="settings-link">
 
         <!-- Ikon Edit Profile (Settings) -->
         <div class="settings-link">
-            <a href="/edit_profile" style="text-decoration: none; cursor: pointer; font-size: 20px;">
+            <a href="/editprofile" style="text-decoration: none; cursor: pointer; font-size: 20px;">
                 🌣
             </a>
+            <button id="openTimer" class="btn">⏱</button>
         </div>
+
     </div>
 </div>
     </div>
@@ -63,27 +70,39 @@
 </div>
 {% endif %}
 
-<div class="dashboard">
+<div class="cards">
+        {% if subjects %}
+            {% for subject in subjects %}
+                <a href="{{ url_for('subject', code=subject.code) }}">
+                    <div class="card">
+                        <h3>{{ subject.code }}</h3>
+                        <p>{{ subject.name }}</p>
+                    </div>
+                </a>
+            {% endfor %}
+        {% else %}
+            <p>No subjects yet. Click + to add.</p>
+        {% endif %}
+    </div>
 
-
-    <!-- Title -->
-    <h1>Your Dashboard</h1>
-
-    <!-- Cards -->
-    <div class="cards">
-    {% if subjects %}
-        {% for s in subjects %}
-            <a href="/subject/{{ s.subject }}">
-                <div class="card">
-                    {{ s.subject }}
-                </div>
-            </a>
-        {% endfor %}
-    {% else %}
-        <p>No Assignments yet. Click + to add.</p>
-    {% endif %}
-</div>
+    <button class="add-btn" onclick="window.location.href='/add_assignment'"> ✚</button>
 
 </div>
+
+
+
+<div id="pomodoroModal" class="modal">
+    <div class="modal-content">
+        <h2 id="mode">Work Time</h2>
+        <h1 id="timer">25:00</h1>
+
+        <button onclick="startTimer()">Start</button>
+        <button onclick="pauseTimer()">Pause</button>
+        <button onclick="resetTimer()">Reset</button>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='pomodoro.js') }}"></script>
+
 </body>
 </html>

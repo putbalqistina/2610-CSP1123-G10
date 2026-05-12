@@ -23,33 +23,34 @@
             <p>MMU STUDENT</p>
         </div>
 
-       <form class="profile-form">
-            <div class="input-group">
-                <input type="text"  method="POST name="full_name" placeholder="Name">
-            </div>
+       <form class="profile-form" action="/editprofile" method="POST">
+    
+    <div class="input-group">
+        <input type="text" name="full_name" placeholder="Name" id="input-name">
+    </div>
 
-            <div class="input-group">
-                <input type="text" name="username" placeholder="Username">
-            </div>
+    <div class="input-group">
+        <input type="text" name="username" placeholder="Username">
+    </div>
 
-            <div class="input-group">
-                <input type="text" name="bio" placeholder="Bio">
-            </div>
+    <div class="input-group">
+        <input type="text" name="bio" placeholder="Bio">
+    </div>
 
-            <label class="gender-label">Enter your gender:</label>
-            <div class="gender-group">
-                <input type="radio" name="gender" value="male" id="male">
-                <label for="male">Male</label>
-                
-                <input type="radio" name="gender" value="female" id="female">
-                <label for="female">Female</label>
-                
-                <input type="radio" name="gender" value="others" id="others">
-                <label for="others">Others</label>
-            </div>
+    <label class="gender-label">Enter your gender:</label>
+    <div class="gender-group">
+        <input type="radio" name="gender" value="male" id="male">
+        <label for="male">Male</label>
+        
+        <input type="radio" name="gender" value="female" id="female">
+        <label for="female">Female</label>
+        
+        <input type="radio" name="gender" value="others" id="others">
+        <label for="others">Others</label>
+    </div>
 
-            <button type="submit" class="btn-edit">Save Changes</button>
-        </form>
+    <button type="submit" class="btn-edit">Save Changes</button>
+</form>
     </div>
     <script>
         // 1. LOGIK UNTUK TUKAR NAMA DI HEADER

@@ -1,9 +1,24 @@
 
-from flask import Flask, render_template, request, redirect, session
+import os
 import sqlite3
+import json
+from flask import Flask, render_template, request, redirect, url_for, session
 
 app = Flask(__name__)
 app.secret_key = "secretkey"
+
+# Cari path fail subjects.json
+base_path = os.path.dirname(__file__)
+json_path = os.path.join(base_path, 'subjects.json')
+
+def load_mmu_subjects():
+    base_path = os.path.dirname(__file__)
+    with open(os.path.join(base_path, 'subjects.json'), 'r') as f:
+        return json.load(f)
+
+# Baca data dari JSON
+with open(json_path, 'r') as f:
+    mmu_subjects = json.load(f)
 
 # connect with database
 def get_db():
@@ -43,6 +58,8 @@ def init_db():
 
 init_db()
 
+
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
 # dummy subjects
 subjects = [
     {"code": "CSP1123", "name": "Mini IT Project"},
@@ -51,6 +68,13 @@ subjects = [
     {"code": "LCT1113", "name": "Critical Thinking"}
 ]
 
+assignment_store = {
+    "Proposal": {
+        "description": "This is assignment description",
+        "comments": ["my part - done", "need to finish before 20/4"],
+        "attachment": None
+    }
+}
 # dummy assignments
 assignments_data = {
     "CSP1123": ["Proposal", "Final Report"],
@@ -58,6 +82,7 @@ assignments_data = {
     "CMT1134": ["Quiz 1", "Test 2"],
     "LCT1113": ["Blended Learning Week 2", "20% Presentation", "Debate Points"]
 }
+
 
 
 @app.route('/')
@@ -128,6 +153,9 @@ def add_assignment():
     user_email = session.get('user')
     if not user_email:
         return redirect("/login")
+    
+    # Gunakan fungsi yang anda dah buat untuk elakkan ralat path
+    mmu_data = load_mmu_subjects() 
 
     if request.method == 'POST':
         subject = request.form.get('subject')
@@ -144,18 +172,128 @@ def add_assignment():
         
         return redirect("/dashboard")
 
-    return render_template("add_assignment.html")
+    # Pastikan nama variable yang dihantar (mmu_data) sama dengan dalam HTML
+    return render_template("add_assignment.html", mmu_data=mmu_data)
 
 @app.route('/dashboard')
-
 def dashboard():
+    user_email = session.get('user')
+    conn = get_db()
 
-    return render_template('dashboard.html', subjects=subjects)
+    # 1. Ambil pilihan filter dari URL (Contoh: /dashboard?subject_filter=CSP1123)
+    selected_filter = request.args.get('subject_filter', 'All')
+
+    # 2. Senarai asal (hardcoded dalam app.py anda)
+    all_subjects = [
+        {"code": "CSP1123", "name": "Mini IT Project"},
+        {"code": "CDS1114", "name": "Digital Systems"},
+        {"code": "CMT1134", "name": "Mathematics III"},
+        {"code": "LCT1113", "name": "Critical Thinking"}
+    ]
+# 3. Logik penapisan
+    if selected_filter == 'All':
+        filtered_subjects = all_subjects
+    else:
+        # Hanya ambil subjek yang code-nya sama dengan pilihan user
+        filtered_subjects = [s for s in all_subjects if s['code'] == selected_filter]
+    # Ambil tugasan daripada database berdasarkan user yang login
+    user_subjects = conn.execute(
+        "SELECT DISTINCT subject FROM assignments WHERE user_email = ?",
+        (user_email,)
+    ).fetchall()
+    conn.close()
+
+    # Hantar 'user_assignments' ke dashboard.html
+    return render_template('dashboard.html', subjects=filtered_subjects)
+
+# app.py
+
+# app.py
+
+@app.route('/editprofile', methods=['GET', 'POST'])
+def editprofile():
+    # 1. Pastikan user dah login (ambil dari session)
+    user_identifier = session.get('user') 
+    if not user_identifier:
+        return redirect(url_for('login'))
+
+    conn = get_db()
+
+    if request.method == 'POST':
+        # 2. Ambil data baru dari borang (index.html)
+        full_name = request.form.get('full_name')
+        username = request.form.get('username')
+        bio = request.form.get('bio')
+        gender = request.form.get('gender')
+
+        # 3. Update data dalam database SQLite
+        conn.execute('''
+            UPDATE users 
+            SET full_name = ?, username = ?, bio = ?, gender = ? 
+            WHERE email = ? OR username = ?
+        ''', (full_name, username, bio, gender, user_identifier, user_identifier))
+        
+        conn.commit()
+        conn.close()
+
+        # 4. INI BAHAGIAN PENTING: Redirect balik ke dashboardselepas save
+        return redirect(url_for('dashboard'))
+
+    # Jika GET (buka page edit), kita papar data asal
+    user_data = conn.execute(
+        "SELECT * FROM users WHERE email = ? OR username = ?", 
+        (user_identifier, user_identifier)
+    ).fetchone()
+    conn.close()
+    
+    return render_template('index.html', user=user_data)
 
 @app.route('/subject/<code>')
 def subject(code):
     assignments = assignments_data.get(code, [])
     return render_template('subject.html', code=code, assignments=assignments)
+
+
+@app.route('/assignment/<title>', methods=["GET", "POST"])
+def assignment(title):
+
+    if title not in assignment_store:
+        assignment_store[title] = {
+            "description": "",
+            "comments": [],
+            "attachment": None
+        }
+
+    data = assignment_store[title]
+
+    if request.method == "POST":
+
+        # update description
+        new_desc = request.form.get("description")
+        if new_desc:
+            data["description"] = new_desc
+
+        # add comment
+        new_comment = request.form.get("comment")
+        if new_comment:
+            data["comments"].append(new_comment)
+
+        # file upload
+        file = request.files.get("file")
+        if file and file.filename != "":
+            path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+            file.save(path)
+            data["attachment"] = file.filename
+
+        return redirect(url_for("assignment", title=title))
+
+    return render_template(
+        "assignment.html",
+        title=title,
+        description=data["description"],
+        comments=data["comments"],
+        attachment=data["attachment"]
+    )
 
 
 if __name__ == '__main__':

@@ -11,20 +11,13 @@
     <div class="container">
         <header>
             <div class="logo">
-
-            </span> <strong>AssignMate</strong>
+             
             </div>
             <div class="nav-tools">
                 <div class="search-bar">
-                    <input type="text" placeholder="Search 🔍︎">
+                   
                 </div>
-                <span>Notifications</span>
-                <div class="filter">Filter ⌄</div>
                 <div class="settings-link">
-        <a href="/edit_profile" style="text-decoration: none; cursor: pointer;">
-            🌣
-        </a>
-    </div>
 
             </div>
         </header>
@@ -32,37 +25,51 @@
         <main>
             <h1>ADD NEW ASSIGNMENT</h1>
 
+    <form class="assignment-form" action="/add_assignment" method="POST">
 
-            <form class="assignment-form" method="POST">
+    <div class="row">
 
-               <form class="assignment-form" action="/add_assignment" method="POST">
+       <div class="row">
+    <div class="input-group">
+        <label>Faculty*</label>
+        <select id="faculty-select" class="dropdown-select" required>
+            <option value="" disabled selected>Select Faculty</option>
+            {% for faculty in mmu_data.keys() %}
+                <option value="{{ faculty }}">{{ faculty }}</option>
+            {% endfor %}
+        </select>
+    </div>
 
-                <div class="row">
-                    <div class="input-group">
-                        <label>Subject*</label>
-                        <input type="text" name="subject" placeholder="Enter subject name" required>
-                    </div>
-                    <div class="input-group">
-                        <label>Assignment Title*</label>
-                        <input type="text" name="title" placeholder="Enter assignment or project name" required>
-                    </div>
-                </div>
+    <div class="input-group">
+        <label>Subject*</label>
+        <select id="subject-select" name="subject" class="dropdown-select" required disabled>
+            <option value="" disabled selected>Select Subject</option>
+        </select>
+    </div>
+</div>
 
-                <div class="input-group">
-                    <label>Description*</label>
-                    <input type="text" name="description" placeholder="Description/note" ></input>
-                </div>
+<div class="input-group">
+            <label>Assignment Title*</label>
+            <input type="text" name="title" placeholder="Enter assignment or project name" required>
+        </div>
 
-                <div class="deadline-container">
-                   <div class="input-group">
-                    <label>Deadline*</label>
-                    <input type="date" id="deadline" name="deadline" class="deadline-input" required>
-                    </div>
-                </div>
+    <div class="input-group">
+        <label>Description*</label>
+        <input type="text" name="description" placeholder="Description/note" rows="3">
+    </div>
 
-                <div class="button-group">
-                    <button type="button" class="btn-cancel" onclick="window.location.href='/dashboard'">CANCEL</button>
-                    <button type="submit" class="btn-add">ADD ASSIGNMENT</button>
+    <div class="deadline-container">
+        <div class="input-group">
+            <label>Deadline*</label>
+            <input type="date" id="deadline" name="deadline" class="deadline-input" required>
+        </div>
+    </div>
+
+    <div class="button-group">
+        <button type="button" class="btn-cancel" onclick="window.location.href='/dashboard'">CANCEL</button>
+        <button type="submit" class="btn-add">ADD ASSIGNMENT</button>
+    </div>
+</form>
                 </div>
             </form>
         </main>
@@ -79,6 +86,36 @@
 
         deadlineInput.min = today;
     </script>
+
+    <script>
+    // Ambil data mmu_data dari Flask ke dalam JavaScript
+    const mmuData = {{ mmu_data | tojson | safe }};
+    
+    const facultySelect = document.getElementById('faculty-select');
+    const subjectSelect = document.getElementById('subject-select');
+
+    facultySelect.addEventListener('change', function() {
+        const selectedFaculty = this.value;
+        
+        // Kosongkan dropdown subjek
+        subjectSelect.innerHTML = '<option value="" disabled selected>Select Subject</option>';
+        
+        if (selectedFaculty && mmuData[selectedFaculty]) {
+            // Aktifkan dropdown subjek
+            subjectSelect.disabled = false;
+            
+            // Tambah subjek mengikut fakulti yang dipilih
+            mmuData[selectedFaculty].forEach(function(s) {
+                const option = document.createElement('option');
+                option.value = s.code + " - " + s.name;
+                option.textContent = s.code + " (" + s.name + ")";
+                subjectSelect.appendChild(option);
+            });
+        } else {
+            subjectSelect.disabled = true;
+        }
+    });
+</script>
 </body>
 </body>
 </html>
