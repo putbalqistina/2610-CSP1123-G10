@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session
+from flask import Flask, render_template, request, redirect, session, url_for
 import sqlite3
 from flask_apscheduler import APScheduler
 import datetime
@@ -10,6 +10,8 @@ import time
 import os
 app = Flask(__name__)
 app.secret_key = "secretkey"
+
+app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
 def get_db():
     conn = sqlite3.connect("database.db")
@@ -45,7 +47,12 @@ def init_db():
             FOREIGN KEY (user_email) REFERENCES users (email)
         )
     """)
-
+    
+    try:
+        conn.execute("ALTER TABLE assignments ADD COLUMN status TEXT DEFAULT 'to_do'")
+    except:
+        pass  # prevents error if column already exists
+    
     conn.commit()
     conn.close()
 
@@ -241,12 +248,45 @@ def dashboard():
         if deadline_date <= today + timedelta(days=3):
             upcoming.append(a)
 
+    conn.close()
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM assignments")
+    total = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM assignments WHERE status = 'completed'")
+    completed = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM assignments WHERE status = 'ongoing'")
+    ongoing = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM assignments WHERE status = 'to_do'")
+    todo = cursor.fetchone()[0]
+
+    conn.close()
+
+    if total == 0:
+        completed_pct = ongoing_pct = todo_pct = 0
+    else:
+        completed_pct = (completed / total) * 100
+        ongoing_pct = (ongoing / total) * 100
+        todo_pct = (todo / total) * 100
+
     return render_template(
         "dashboard.html",
         subjects=subjects,
         assignments=assignments,
-        upcoming=upcoming
+        upcoming=upcoming,
+        completed=completed,
+        ongoing=ongoing,
+        todo=todo,
+        completed_pct=round(completed_pct, 1),
+        ongoing_pct=round(ongoing_pct, 1),
+        todo_pct=round(todo_pct, 1)
     )
+
 
 @app.route('/subject/<code>')
 def subject(code):
@@ -320,14 +360,35 @@ def assignment(title):
             file.save(path)
             data["attachment"] = file.filename
 
+        status = request.form.get("status")
+        conn = sqlite3.connect("database.db")
+        cursor = conn.cursor()
+
+        cursor.execute("""
+            UPDATE assignments 
+            SET status = ?
+            WHERE title = ?
+        """, (status, title))
+
+        conn.commit()
+        conn.close()
         return redirect(url_for("assignment", title=title))
+    
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT status FROM assignments WHERE title = ?", (title,))
+    assignment = cursor.fetchone()
+
+    conn.close()
 
     return render_template(
         "assignment.html",
         title=title,
         description=data["description"],
         comments=data["comments"],
-        attachment=data["attachment"]
+        attachment=data["attachment"],
+        status = assignment[0] if assignment else "to_do"
     )
 
 @app.route("/logout")

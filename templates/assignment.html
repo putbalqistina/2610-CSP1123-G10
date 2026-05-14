@@ -24,7 +24,10 @@
 
         <div class="card">
             <h3>Assignment Description</h3>
-            <p>{{ description }}</p>
+            <form method="POST">
+                <textarea name="description" rows="4" style="width:100;">{{ description }}</textarea>
+                <button type="submit" class="btn btn-save">Save</button>
+            </form>
         </div>
 
         <div>
@@ -33,14 +36,41 @@
                 {% for comment in comments %}
                     <p>• {{ comment }}</p>
                 {% endfor %}
+
+                <form method="POST">
+                    <input type="text" name="comment" placeholder="Add note..." style="width:100%">
+                    <button type="submit" class="btn btn-add">Add</button>
+                </form>
             </div>
 
             <div class="card">
                 <h3>Attachment</h3>
-                <p>{{ attachment }}</p>
+                {% if attachment %}
+                    <p>📁 {{ attachment }}</p>
+                {% else %}
+                    <p>No file uploaded</p>
+                {% endif %}
+
+                <form method="POST" enctype="multipart/form-data">
+                    <input type="file" name="file">
+                    <button type="submit" class="btn btn-upload">Upload</button>
+                </form>
             </div>
         </div>
 
+        <div class="card">
+            <h3>Assignment Status</h3>
+
+            <form method="POST">
+                <select name="status" style="width:100%; padding:8px; margin:10px 0;">
+                    <option value="to_do" {% if status == "to_do" %}selected{% endif %}>📝 To Do</option>
+                    <option value="ongoing" {% if status == "ongoing" %}selected{% endif %}>⏳ Ongoing</option>
+                    <option value="completed" {% if status == "completed" %}selected{% endif %}>✅ Completed</option>
+                </select>
+
+                <button type="submit" class="btn btn-save">Update Status</button>
+            </form>
+        </div>
     </div>
 
 </div>

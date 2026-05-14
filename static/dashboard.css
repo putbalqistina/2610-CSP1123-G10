@@ -95,3 +95,15 @@ h1 {
     border-radius: 10px;
     margin-bottom: 20px;
 }
+
+.progress-bar {
+    background: #eee;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    background: green;
+    color: white;
+    padding: 5px;
+}
