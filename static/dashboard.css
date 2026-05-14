@@ -162,42 +162,52 @@ h1 {
     transform: scale(0.95);
 }
 
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 999;
-  left: 0; top: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.5);
+/* popup right side */
+.right {
+    position: relative;
+    display: flex;
+    gap: 10px;
+    align-items: center;
 }
 
-.modal-content {
-  background: #fff;
-  margin: 10% auto;
-  padding: 30px;
-  width: 300px;
-  text-align: center;
-  border-radius: 15px;
+/* popup kecil */
+.pomodoro-popup {
+    display: none;
+
+    position: absolute;
+    top: 50px;
+    right: 50px;
+
+    width: 260px;
+
+    background: white;
+    padding: 20px;
+
+    border-radius: 15px;
+
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+
+    z-index: 999;
 }
 
-#timer {
-  font-size: 48px;
-  margin: 20px 0;
+/* popup top */
+.popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.buttons button {
-  margin: 5px;
-  padding: 10px 15px;
-  border: none;
-  border-radius: 8px;
-  background: #4CAF50;
-  color: white;
-  cursor: pointer;
-}
-
+/* close button */
 #closeTimer {
-  position: absolute;
-  right: 20px;
-  top: 10px;
-  cursor: pointer;
+    border: none;
+    background: none;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+/* timer text */
+#timer {
+    font-size: 42px;
+    text-align: center;
+    margin: 20px 0;
 }

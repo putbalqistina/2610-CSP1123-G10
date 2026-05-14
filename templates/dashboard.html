@@ -19,12 +19,30 @@
         <input type="text" placeholder="Search 🔍︎">
         <div>Notifications | Filter</div>
         <div>🌣</div>
+    </div>
 
-        <div>
-            <button id="openTimer" class="btn">⏱</button>
+<div class="right">
+
+    <button id="openTimer" class="btn">⏱️</button>
+
+    <div id="pomodoroPopup" class="pomodoro-popup">
+
+        <div class="popup-header">
+            <span id="mode">Work Time</span>
+            <button id="closeTimer">&times;</button>
+        </div>
+
+        <h1 id="timer">25:00</h1>
+
+        <div class="buttons">
+            <button onclick="startTimer()">Start</button>
+            <button onclick="pauseTimer()">Pause</button>
+            <button onclick="resetTimer()">Reset</button>
         </div>
 
     </div>
+
+</div>
 
     <!-- Title -->
     <h1>Your Dashboard</h1>
@@ -48,16 +66,6 @@
 
 </div>
 
-<div id="pomodoroModal" class="modal">
-    <div class="modal-content">
-        <h2 id="mode">Work Time</h2>
-        <h1 id="timer">25:00</h1>
-
-        <button onclick="startTimer()">Start</button>
-        <button onclick="pauseTimer()">Pause</button>
-        <button onclick="resetTimer()">Reset</button>
-    </div>
-</div>
 
 <script src="{{ url_for('static', filename='pomodoro.js') }}"></script>
 
