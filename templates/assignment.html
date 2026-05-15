@@ -46,16 +46,31 @@
 
             <div class="card">
                 <h3>Attachment</h3>
-                {% if attachment %}
-                    <p>📁 {{ attachment }}</p>
-                {% else %}
-                    <p>No file uploaded</p>
-                {% endif %}
 
-                <form method="POST" enctype="multipart/form-data">
-                    <input type="file" name="file">
-                    <button type="submit" class="btn btn-upload">Upload</button>
-                </form>
+                {% if attachment %}
+
+                    <div class="file-box">
+                        <span>📄 {{ attachment }}</span>
+
+                        <a href="{{ url_for('delete_file', filename=attachment) }}"
+                        class="btn btn-delete">
+                        Delete
+                        </a>
+                    </div>
+
+                {% else %}
+
+                    <p>No file uploaded</p>
+
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="file" name="file">
+
+                        <button type="submit" class="btn btn-upload">
+                            Upload
+                        </button>
+                    </form>
+
+                {% endif %}
             </div>
         </div>
 

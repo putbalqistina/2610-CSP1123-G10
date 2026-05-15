@@ -68,6 +68,28 @@ textarea {
     box-sizing: border-box;
 }
 
+/*file box uploads*/
+.file-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    background: #f3f4f6;
+    padding: 12px;
+    border-radius: 10px;
+
+    margin-bottom: 15px;
+}
+
+.btn-delete {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-delete:hover {
+    background: #dc2626;
+}
+
 .add-btn {
     position: fixed;
     bottom: 30px;

@@ -71,10 +71,22 @@ def assignment(title):
 
         # file upload
         file = request.files.get("file")
-        if file and file.filename != "":
-            path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+
+        if (
+            file and
+            file.filename != "" and
+            data["attachment"] is None
+        ):
+
+            path = os.path.join(
+                app.config['UPLOAD_FOLDER'],
+                file.filename
+            )
+
             file.save(path)
+
             data["attachment"] = file.filename
+
 
         return redirect(url_for("assignment", title=title))
 
