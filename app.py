@@ -99,6 +99,7 @@ def assignment(title):
         attachment=data["attachment"]
     )
 
+# delete file route
 @app.route('/delete/<filename>')
 def delete_file(filename):
 
