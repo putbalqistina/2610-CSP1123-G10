@@ -13,7 +13,6 @@
     
 <button class="add-btn" onclick="window.location.href='/add_assignment'">+</button>
 
-
 <div class="dashboard">
 
     <!-- Topbar -->
@@ -30,8 +29,8 @@
                         <label>Subject</label>
                         <select name="subject_filter">
                            <option value="All">All Subjects</option>
-                    {% for s in subjects %}
-                        <option value="{{ s.code }}">{{ s.name }}</option>
+                    {% for subject in subjects %}
+                        <option value="{{ subject }}">{{ subject }}</option>
                     {% endfor %}
                         </select>
                     </div>
@@ -49,6 +48,9 @@
                 🌣
             </a>
             <button id="openTimer" class="btn">⏱</button>
+            <a href="{{ url_for('calendar_view') }}" title="View Calendar" style="text-decoration: none; font-size: 1.5rem;">
+    📅
+</a>
         </div>
 
     </div>
@@ -71,12 +73,12 @@
 {% endif %}
 
 <div class="cards">
-        {% if subjects %}
-            {% for subject in subjects %}
-                <a href="{{ url_for('subject', code=subject.code) }}">
+        {% if assignments %}
+            {% for a in assignments %}
+                <a href="{{ url_for('subject', code=a.subject) }}">
                     <div class="card">
-                        <h3>{{ subject.code }}</h3>
-                        <p>{{ subject.name }}</p>
+                        <h3>{{ a.subject }}</h3>
+                        <p>{{ a.title }}</p>
                     </div>
                 </a>
             {% endfor %}

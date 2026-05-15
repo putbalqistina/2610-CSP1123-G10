@@ -180,31 +180,35 @@ def dashboard():
     user_email = session.get('user')
     conn = get_db()
 
-    # 1. Ambil pilihan filter dari URL (Contoh: /dashboard?subject_filter=CSP1123)
+    # 1. Ambil pilihan filter dari URL (default: 'All')
     selected_filter = request.args.get('subject_filter', 'All')
 
-    # 2. Senarai asal (hardcoded dalam app.py anda)
-    all_subjects = [
-        {"code": "CSP1123", "name": "Mini IT Project"},
-        {"code": "CDS1114", "name": "Digital Systems"},
-        {"code": "CMT1134", "name": "Mathematics III"},
-        {"code": "LCT1113", "name": "Critical Thinking"}
-    ]
-# 3. Logik penapisan
-    if selected_filter == 'All':
-        filtered_subjects = all_subjects
-    else:
-        # Hanya ambil subjek yang code-nya sama dengan pilihan user
-        filtered_subjects = [s for s in all_subjects if s['code'] == selected_filter]
-    # Ambil tugasan daripada database berdasarkan user yang login
-    user_subjects = conn.execute(
-        "SELECT DISTINCT subject FROM assignments WHERE user_email = ?",
+    # 2. AMBIL SENARAI SUBJEK DINAMIK DARI DATABASE
+    # Kita guna DISTINCT supaya nama subjek yang sama tidak berulang dalam dropdown
+    subject_rows = conn.execute(
+        "SELECT DISTINCT subject FROM assignments WHERE user_email = ?", 
         (user_email,)
     ).fetchall()
+    
+    # Tukar hasil query kepada list biasa untuk dipasangkan ke template
+    user_subjects = [row['subject'] for row in subject_rows]
+
+    # 3. LOGIK PENAPISAN TUGASAN
+    if selected_filter == 'All' or selected_filter == '':
+        assignments = conn.execute(
+            "SELECT * FROM assignments WHERE user_email = ?", 
+            (user_email,)
+        ).fetchall()
+    else:
+        assignments = conn.execute(
+            "SELECT * FROM assignments WHERE user_email = ? AND subject = ?", 
+            (user_email, selected_filter)
+        ).fetchall()
+    
     conn.close()
 
     # Hantar 'user_assignments' ke dashboard.html
-    return render_template('dashboard.html', subjects=filtered_subjects)
+    return render_template('dashboard.html', subjects=user_subjects, assignments=assignments)
 
 # app.py
 
@@ -294,6 +298,37 @@ def assignment(title):
         comments=data["comments"],
         attachment=data["attachment"]
     )
+
+@app.route('/api/assignments')
+def get_calendar_assignments():
+    user_email = session.get('user')
+    if not user_email:
+        return redirect("/login")
+
+    conn = get_db()
+    # Fetch assignments for the logged-in user
+    rows = conn.execute(
+        "SELECT title, deadline, subject FROM assignments WHERE user_email = ?",
+        (user_email,)
+    ).fetchall()
+    conn.close()
+
+    events = []
+    for row in rows:
+        events.append({
+            "title": f"[{row['subject']}] {row['title']}",
+            "start": row['deadline'], # Ensure your deadline format is YYYY-MM-DD
+            "allDay": True,
+            "color": "#3788d8" # You can customize color per subject if you like
+        })
+    
+    return json.dumps(events)
+
+@app.route('/calendar')
+def calendar_view():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    return render_template('calendar.html')
 
 
 if __name__ == '__main__':
