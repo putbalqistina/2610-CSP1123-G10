@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, send_from_directory
 import os
 app = Flask(__name__)
 
@@ -89,6 +89,7 @@ def assignment(title):
 
 
         return redirect(url_for("assignment", title=title))
+    
 
     return render_template(
         "assignment.html",
@@ -97,6 +98,24 @@ def assignment(title):
         comments=data["comments"],
         attachment=data["attachment"]
     )
+
+@app.route('/delete/<filename>')
+def delete_file(filename):
+
+    path = os.path.join(
+        app.config['UPLOAD_FOLDER'],
+        filename
+    )
+
+    if os.path.exists(path):
+        os.remove(path)
+
+    # reset attachment
+    for assignment in assignment_store.values():
+        if assignment["attachment"] == filename:
+            assignment["attachment"] = None
+
+    return redirect(request.referrer)
 
 
 if __name__ == '__main__':
