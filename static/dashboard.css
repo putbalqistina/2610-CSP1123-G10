@@ -54,6 +54,20 @@ h1 {
     transform: translateY(-3px);
 }
 
+textarea {
+    width: 100%;
+    min-height: 250px;
+
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+
+    resize: vertical;
+
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
 .add-btn {
     position: fixed;
     bottom: 30px;
