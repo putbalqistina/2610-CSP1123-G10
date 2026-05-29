@@ -311,13 +311,13 @@ def analytics():
 
     for a in assignments:
 
-        if a["status"] == "Completed":
+        if a["status"] == "completed":
             completed += 1
 
-        elif a["status"] == "Ongoing":
+        elif a["status"] == "ongoing":
             ongoing += 1
 
-        elif a["status"] == "To Do":
+        elif a["status"] == "to_do":
             todo += 1
 
     total = completed + ongoing + todo
