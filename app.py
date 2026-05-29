@@ -2,8 +2,16 @@ from flask import Flask, render_template, request, redirect, url_for, send_from_
 import os
 app = Flask(__name__)
 
-
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
+
+ALLOWED_EXTENSIONS = {'pdf', 'docx', 'txt', 'jpg', 'jpeg', 'png'}
+def allowed_file(filename):
+    return (
+        '.' in filename and
+        filename.rsplit('.', 1)[1].lower()
+        in ALLOWED_EXTENSIONS
+    )
 # dummy subjects
 subjects = [
     {"code": "CSP1123", "name": "Mini IT Project"},
@@ -16,7 +24,7 @@ assignment_store = {
     "Proposal": {
         "description": "This is assignment description",
         "comments": ["my part - done", "need to finish before 20/4"],
-        "attachment": None
+        "attachment": []
     }
 }
 # dummy assignments
@@ -52,7 +60,7 @@ def assignment(title):
         assignment_store[title] = {
             "description": "",
             "comments": [],
-            "attachment": None
+            "attachment": []
         }
 
     data = assignment_store[title]
@@ -75,7 +83,8 @@ def assignment(title):
         if (
             file and
             file.filename != "" and
-            data["attachment"] is None
+            len(data["attachment"]) < 3 and 
+            allowed_file(file.filename)
         ):
 
             path = os.path.join(
@@ -85,7 +94,7 @@ def assignment(title):
 
             file.save(path)
 
-            data["attachment"] = file.filename
+            data["attachment"].append(file.filename)
 
 
         return redirect(url_for("assignment", title=title))
@@ -99,6 +108,13 @@ def assignment(title):
         attachment=data["attachment"]
     )
 
+# Display file route
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(
+        app.config['UPLOAD_FOLDER'],
+        filename
+    )
 # delete file route
 @app.route('/delete/<filename>')
 def delete_file(filename):
@@ -113,8 +129,8 @@ def delete_file(filename):
 
     # reset attachment
     for assignment in assignment_store.values():
-        if assignment["attachment"] == filename:
-            assignment["attachment"] = None
+        if filename in assignment["attachment"]:
+            assignment["attachment"].remove(filename)
 
     return redirect(request.referrer)
 

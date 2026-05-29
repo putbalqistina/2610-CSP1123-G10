@@ -48,15 +48,22 @@
                 <h3>Attachment</h3>
 
                 {% if attachment %}
+                    {% for file in attachment %}
 
                     <div class="file-box">
-                        <span>📄 {{ attachment }}</span>
 
-                        <a href="{{ url_for('delete_file', filename=attachment) }}"
-                        class="btn btn-delete">
-                        Delete
+                        <a href="{{ url_for('uploaded_file', filename=file) }}"
+                         target="_blank">
+                         {{ file }}
+                        </a>
+
+                        <a href="{{ url_for('delete_file', filename=file) }}"
+                         class="btn btn-delete">
+                         Delete
                         </a>
                     </div>
+                    
+                    {% endfor %}
 
                 {% else %}
 
