@@ -253,7 +253,7 @@ def dashboard():
         # only assignments due within next 3 days
         if 0 <= days_left <= 3:
             upcoming.append(a)
-            
+
     conn.close()
 
     conn = get_db()
@@ -285,14 +285,62 @@ def dashboard():
         subjects=subjects,
         assignments=assignments,
         upcoming=upcoming,
+    )
+
+@app.route("/analytics")
+def analytics():
+
+    if "user" not in session:
+        return redirect("/login")
+
+    conn = get_db()
+
+    assignments = conn.execute(
+        """
+        SELECT * FROM assignments
+        WHERE user_email = ?
+        """,
+        (session["user"],)
+    ).fetchall()
+
+    conn.close()
+
+    completed = 0
+    ongoing = 0
+    todo = 0
+
+    for a in assignments:
+
+        if a["status"] == "Completed":
+            completed += 1
+
+        elif a["status"] == "Ongoing":
+            ongoing += 1
+
+        elif a["status"] == "To Do":
+            todo += 1
+
+    total = completed + ongoing + todo
+
+    if total > 0:
+        completed_pct = round((completed / total) * 100)
+        ongoing_pct = round((ongoing / total) * 100)
+        todo_pct = round((todo / total) * 100)
+
+    else:
+        completed_pct = 0
+        ongoing_pct = 0
+        todo_pct = 0
+
+    return render_template(
+        "analytics.html",
         completed=completed,
         ongoing=ongoing,
         todo=todo,
-        completed_pct=round(completed_pct, 1),
-        ongoing_pct=round(ongoing_pct, 1),
-        todo_pct=round(todo_pct, 1)
+        completed_pct=completed_pct,
+        ongoing_pct=ongoing_pct,
+        todo_pct=todo_pct
     )
-
 
 @app.route('/subject/<code>')
 def subject(code):

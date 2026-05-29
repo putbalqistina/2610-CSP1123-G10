@@ -39,6 +39,11 @@ function closeReminder() {
         <div>AssignMate</div>
         <input type="text" placeholder="Search 🔍︎">
         <div>Notifications | Filter</div>
+        <div class="analytics-link">
+        <a href="{{ url_for('analytics') }}" style="text-decoration: none; cursor: pointer;">
+        📊 Analytics
+        </a>
+        </div>
         <div class="settings-link">
         <a href="/edit_profile" style="text-decoration: none; cursor: pointer;">
             🌣
@@ -65,35 +70,6 @@ function closeReminder() {
             {% else %}
             <p> No Assignments yet. Click + to add.</p>
             {% endif %}
-        </div>
-
-
-
-        <div class="card">
-            <h3>Completed</h3>
-            <p>{{ completed }} tasks</p>
-            <p>{{ completed_pct }}%</p>
-        </div>
-
-        <div class="card">
-            <h3>Ongoing</h3>
-            <p>{{ ongoing }} tasks</p>
-            <p>{{ ongoing_pct }}%</p>
-        </div>
-
-        <div class="card">
-            <h3>To Do</h3>
-            <p>{{ todo }} tasks</p>
-            <p>{{ todo_pct }}%</p>
-        </div>
-
-        <div class="card">
-            <h3>Overall Progress</h3>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width: {{ completed_pct }}%;">
-                    {{ completed_pct }}%
-                </div>
-            </div>
         </div>
     </div>
 </div>

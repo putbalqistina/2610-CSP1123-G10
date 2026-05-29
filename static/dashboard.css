@@ -96,17 +96,6 @@ h1 {
     margin-bottom: 20px;
 }
 
-.progress-bar {
-    background: #eee;
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-.progress-fill {
-    background: green;
-    color: white;
-    padding: 5px;
-}
 
 .alert-box {
     position: relative;
