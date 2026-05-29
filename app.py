@@ -239,15 +239,21 @@ def dashboard():
 
     conn.close()
 
+
+
     today = datetime.today().date()
+
     upcoming = []
 
     for a in assignments:
-        deadline_date = datetime.strptime(a["deadline"], "%Y-%m-%d").date()
+        deadline = datetime.strptime(a["deadline"], "%Y-%m-%d").date()
 
-        if deadline_date <= today + timedelta(days=3):
+        days_left = (deadline - today).days
+
+        # only assignments due within next 3 days
+        if 0 <= days_left <= 3:
             upcoming.append(a)
-
+            
     conn.close()
 
     conn = get_db()

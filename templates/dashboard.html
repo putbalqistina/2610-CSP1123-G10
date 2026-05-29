@@ -13,12 +13,23 @@
 <button class="add-btn" onclick="window.location.href='/add_assignment'">+</button>
 
 {% if upcoming %}
-<div class="alert-box">
+<div class="alert-box" id="reminder-box">
+
+    <span class="close-btn" onclick="closeReminder()">&times;</span>
+
     <h3>Upcoming Deadlines</h3>
+
     {% for item in upcoming %}
         <p>{{ item.title }} is due on {{ item.deadline }}</p>
     {% endfor %}
 </div>
+
+<script>
+function closeReminder() {
+    document.getElementById("reminder-box").style.display = "none";
+}
+</script>
+
 {% endif %}
 
 <div class="dashboard">
@@ -35,6 +46,7 @@
     </div>
     </div>
 
+    
     <!-- Title -->
     <h1>Your Dashboard</h1>
 
