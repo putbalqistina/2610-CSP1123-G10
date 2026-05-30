@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory
+from werkzeug.utils import secure_filename
 import os
+import uuid
 app = Flask(__name__)
 
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
@@ -86,15 +88,18 @@ def assignment(title):
             len(data["attachment"]) < 3 and 
             allowed_file(file.filename)
         ):
+            
+            filename = secure_filename(file.filename)
+            unique_filename = str(uuid.uuid4()) + "_" + filename
 
             path = os.path.join(
                 app.config['UPLOAD_FOLDER'],
-                file.filename
+                unique_filename
             )
 
             file.save(path)
 
-            data["attachment"].append(file.filename)
+            data["attachment"].append(unique_filename)
 
 
         return redirect(url_for("assignment", title=title))
