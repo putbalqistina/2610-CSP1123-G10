@@ -1,20 +1,47 @@
-from flask import Flask, render_template, request, redirect, url_for
 import os
 import sqlite3
 import json
 import smtplib
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
-
-from flask import Flask, render_template, request, redirect, session, url_for
-from flask_apscheduler import APScheduler
-
 import uuid
+
+from flask import Flask, render_template, request, redirect, session, url_for, send_from_directory
+from flask_apscheduler import APScheduler
+from werkzeug.utils import secure_filename
+
 app = Flask(__name__)
 app.secret_key = "secretkey"
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
-# dummy subjects
+
+# Ensure upload folder directory structure exists on startup
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Locate and load subjects.json path safely
+base_path = os.path.dirname(__file__)
+json_path = os.path.join(base_path, 'subjects.json')
+
+# --- Helper Functions ---
+
+def get_db():
+    conn = sqlite3.connect("database.db")
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def load_mmu_subjects():
+    try:
+        with open(json_path, 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'docx', 'xlsx', 'zip'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# --- Data Stores ---
+
 subjects = [
     {"code": "CSP1123", "name": "Mini IT Project"},
     {"code": "CDS1114", "name": "Digital Systems"},
@@ -37,7 +64,6 @@ assignments_data = {
     "LCT1113": ["Blended Learning Week 2", "20% Presentation", "Debate Points"]
 }
 
-
 # --- Routes ---
 
 @app.route('/')
@@ -54,7 +80,6 @@ def login():
         password = request.form["password"]
 
         conn = get_db()
-        # Find user matching either the email or username
         user = conn.execute(
             "SELECT * FROM users WHERE (email = ? OR username = ?) AND password = ?",
             (login_input, login_input, password)
@@ -62,7 +87,6 @@ def login():
         conn.close()
 
         if user:
-            # CRITICAL FIX: Save user's EMAIL in session so dashboard queries work perfectly
             session["user"] = user["email"]
             return redirect(url_for("dashboard"))
         else:
@@ -135,14 +159,12 @@ def dashboard():
     conn = get_db()
     selected_filter = request.args.get('subject_filter', 'All')
 
-    # Get unique subject dropdown list for the signed-in user
     subject_rows = conn.execute(
         "SELECT DISTINCT subject FROM assignments WHERE user_email = ?", 
         (user_email,)
     ).fetchall()
     user_subjects = [row['subject'] for row in subject_rows]
 
-    # Filter assignments base configuration
     if selected_filter == 'All' or selected_filter == '':
         assignments = conn.execute(
             "SELECT * FROM assignments WHERE user_email = ?", 
@@ -154,7 +176,6 @@ def dashboard():
             (user_email, selected_filter)
         ).fetchall()
     
-    # --- Process Upcoming deadlines (The logic that was broken and dangling previously) ---
     today = datetime.today().date()
     upcoming = []
     
@@ -165,7 +186,7 @@ def dashboard():
             if 0 <= days_left <= 3:
                 upcoming.append(a)
         except (ValueError, TypeError):
-            pass # Skips iteration if formatting rules aren't matching standard format strings
+            pass
 
     conn.close()
     return render_template('dashboard.html', subjects=user_subjects, assignments=assignments, upcoming=upcoming)
@@ -247,14 +268,11 @@ def analytics():
         todo_pct=todo_pct
     )
 
+
 @app.route('/subject/<code>')
 def subject(code):
-    # If code is "CMT1134 - Mathematics III", split at " - " and take the first piece ("CMT1134")
     short_code = code.split(" - ")[0].strip()
-    
-    # Perform the dictionary lookup using the short code
     assignments = assignments_data.get(short_code, [])
-    
     return render_template('subject.html', code=code, assignments=assignments)
 
 
@@ -286,19 +304,11 @@ def assignment(title):
             len(data["attachment"]) < 3 and 
             allowed_file(file.filename)
         ):
-            
             filename = secure_filename(file.filename)
             unique_filename = str(uuid.uuid4()) + "_" + filename
-
-            path = os.path.join(
-                app.config['UPLOAD_FOLDER'],
-                unique_filename
-            )
-
+            path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
             file.save(path)
-
             data["attachment"].append(unique_filename)
-
 
         status = request.form.get("status")
         conn = get_db()
@@ -317,7 +327,6 @@ def assignment(title):
     conn.close()
 
     status = assignment_row["status"] if assignment_row else "to_do"
-    
 
     return render_template(
         "assignment.html",
@@ -360,17 +369,17 @@ def calendar_view():
         return redirect(url_for('login'))
     return render_template('calendar.html')
 
-# Display file route
+
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(
         app.config['UPLOAD_FOLDER'],
         filename
     )
-# delete file route
+
+
 @app.route('/delete/<filename>')
 def delete_file(filename):
-
     path = os.path.join(
         app.config['UPLOAD_FOLDER'],
         filename
@@ -379,40 +388,12 @@ def delete_file(filename):
     if os.path.exists(path):
         os.remove(path)
 
-    # reset attachment
     for assignment in assignment_store.values():
         if filename in assignment["attachment"]:
             assignment["attachment"].remove(filename)
 
-    return redirect(request.referrer)
-
-# Display file route
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(
-        app.config['UPLOAD_FOLDER'],
-        filename
-    )
-# delete file route
-@app.route('/delete/<filename>')
-def delete_file(filename):
-
-    path = os.path.join(
-        app.config['UPLOAD_FOLDER'],
-        filename
-    )
-
-    if os.path.exists(path):
-        os.remove(path)
-
-    # reset attachment
-    for assignment in assignment_store.values():
-        if filename in assignment["attachment"]:
-            assignment["attachment"].remove(filename)
-
-    return redirect(request.referrer)
+    return redirect(request.referrer or url_for('dashboard'))
 
 
 if __name__ == '__main__':
     app.run(debug=True)
-    
