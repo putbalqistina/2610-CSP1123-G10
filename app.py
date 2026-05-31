@@ -302,10 +302,14 @@ def analytics():
         todo_pct=todo_pct
     )
 
-
 @app.route('/subject/<code>')
 def subject(code):
-    assignments = assignments_data.get(code, [])
+    # If code is "CMT1134 - Mathematics III", split at " - " and take the first piece ("CMT1134")
+    short_code = code.split(" - ")[0].strip()
+    
+    # Perform the dictionary lookup using the short code
+    assignments = assignments_data.get(short_code, [])
+    
     return render_template('subject.html', code=code, assignments=assignments)
 
 
