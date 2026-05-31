@@ -11,7 +11,8 @@ from flask_apscheduler import APScheduler
 
 import uuid
 app = Flask(__name__)
-app.secret_key = "secretkey"app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
+app.secret_key = "secretkey"
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 # dummy subjects
 subjects = [
