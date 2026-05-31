@@ -7,12 +7,14 @@ const timerDisplay = document.getElementById("timer");
 const modeDisplay = document.getElementById("mode");
 
 // popup control
+const popup = document.getElementById("pomodoroPopup");
+
 document.getElementById("openTimer").onclick = () => {
-  document.getElementById("pomodoroModal").style.display = "block";
+    popup.style.display = "block";
 };
 
 document.getElementById("closeTimer").onclick = () => {
-  document.getElementById("pomodoroModal").style.display = "none";
+    popup.style.display = "none";
 };
 
 // format time

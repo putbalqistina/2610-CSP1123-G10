@@ -1,3 +1,4 @@
+from flask import Flask, render_template, request, redirect, url_for
 import os
 import sqlite3
 import json
@@ -8,68 +9,11 @@ from email.mime.text import MIMEText
 from flask import Flask, render_template, request, redirect, session, url_for
 from flask_apscheduler import APScheduler
 
+import uuid
 app = Flask(__name__)
-app.secret_key = "secretkey"
+app.secret_key = "secretkey"app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
-
-# Locate and load subjects.json path safely
-base_path = os.path.dirname(__file__)
-json_path = os.path.join(base_path, 'subjects.json')
-
-def load_mmu_subjects():
-    with open(json_path, 'r') as f:
-        return json.load(f)
-
-# Read dynamic data from JSON safely
-try:
-    with open(json_path, 'r') as f:
-        mmu_subjects = json.load(f)
-except FileNotFoundError:
-    mmu_subjects = []
-
-# --- Database setup ---
-def get_db():
-    conn = sqlite3.connect("database.db")
-    conn.row_factory = sqlite3.Row
-    return conn
-
-def init_db():
-    conn = get_db()
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE,
-            email TEXT NOT NULL UNIQUE,
-            password TEXT NOT NULL,
-            full_name TEXT,
-            bio TEXT,
-            gender TEXT,
-            profile_pic TEXT
-        )
-    ''')
-
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS assignments (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            subject TEXT NOT NULL,
-            title TEXT NOT NULL,
-            deadline TEXT NOT NULL,
-            user_email TEXT NOT NULL,
-            FOREIGN KEY (user_email) REFERENCES users (email)
-        )
-    ''') 
-    
-    try:
-        conn.execute("ALTER TABLE assignments ADD COLUMN status TEXT DEFAULT 'to_do'")
-    except sqlite3.OperationalError:
-        pass  # prevents error if column already exists
-    
-    conn.commit()
-    conn.close()
-
-init_db()
-
-# --- Hardcoded Dummy Data ---
+# dummy subjects
 subjects = [
     {"code": "CSP1123", "name": "Mini IT Project"},
     {"code": "CDS1114", "name": "Digital Systems"},
@@ -81,7 +25,7 @@ assignment_store = {
     "Proposal": {
         "description": "This is assignment description",
         "comments": ["my part - done", "need to finish before 20/4"],
-        "attachment": None
+        "attachment": []
     }
 }
 
@@ -319,7 +263,7 @@ def assignment(title):
         assignment_store[title] = {
             "description": "",
             "comments": [],
-            "attachment": None
+            "attachment": []
         }
 
     data = assignment_store[title]
@@ -334,10 +278,26 @@ def assignment(title):
             data["comments"].append(new_comment)
 
         file = request.files.get("file")
-        if file and file.filename != "":
-            path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+
+        if (
+            file and
+            file.filename != "" and
+            len(data["attachment"]) < 3 and 
+            allowed_file(file.filename)
+        ):
+            
+            filename = secure_filename(file.filename)
+            unique_filename = str(uuid.uuid4()) + "_" + filename
+
+            path = os.path.join(
+                app.config['UPLOAD_FOLDER'],
+                unique_filename
+            )
+
             file.save(path)
-            data["attachment"] = file.filename
+
+            data["attachment"].append(unique_filename)
+
 
         status = request.form.get("status")
         conn = get_db()
@@ -356,6 +316,7 @@ def assignment(title):
     conn.close()
 
     status = assignment_row["status"] if assignment_row else "to_do"
+    
 
     return render_template(
         "assignment.html",
@@ -398,6 +359,59 @@ def calendar_view():
         return redirect(url_for('login'))
     return render_template('calendar.html')
 
+# Display file route
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(
+        app.config['UPLOAD_FOLDER'],
+        filename
+    )
+# delete file route
+@app.route('/delete/<filename>')
+def delete_file(filename):
+
+    path = os.path.join(
+        app.config['UPLOAD_FOLDER'],
+        filename
+    )
+
+    if os.path.exists(path):
+        os.remove(path)
+
+    # reset attachment
+    for assignment in assignment_store.values():
+        if filename in assignment["attachment"]:
+            assignment["attachment"].remove(filename)
+
+    return redirect(request.referrer)
+
+# Display file route
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(
+        app.config['UPLOAD_FOLDER'],
+        filename
+    )
+# delete file route
+@app.route('/delete/<filename>')
+def delete_file(filename):
+
+    path = os.path.join(
+        app.config['UPLOAD_FOLDER'],
+        filename
+    )
+
+    if os.path.exists(path):
+        os.remove(path)
+
+    # reset attachment
+    for assignment in assignment_store.values():
+        if filename in assignment["attachment"]:
+            assignment["attachment"].remove(filename)
+
+    return redirect(request.referrer)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
+    

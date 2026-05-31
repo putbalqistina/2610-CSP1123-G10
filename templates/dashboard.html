@@ -11,68 +11,40 @@
 
     <div class="dashboard">
 
-        <div class="topbar">
-            <div class="brand">AssignMate</div>
-            
-            <div class="search-bar">
-                <input type="text" placeholder="Search 🔍︎">
-            </div>
-            
-            <div style="display: flex; align-items: center; gap: 15px;">
-                
-                <div class="nav-item dropdown">
-                    <span class="filter-btn">Notifications | Filter ▾</span>
-                    <div class="dropdown-content">
-                        <form action="/dashboard" method="GET">
-                            <div class="filter-group">
-                                <label for="subject_filter">Subject</label>
-                                <select name="subject_filter" id="subject_filter">
-                                    <option value="All">All Subjects</option>
-                                    {% for subject in subjects %}
-                                        <option value="{{ subject }}">{{ subject }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <button type="submit" class="apply-btn">Apply Filter</button>
-                        </form>
-                    </div>
-                </div>
+    <!-- Topbar -->
+    <div class="topbar">
+        <div>AssignMate</div>
+        <input type="text" placeholder="Search 🔍︎">
+        <div>Notifications | Filter</div>
+        <div>🌣</div>
+        <div><button id="openTimer" class="btn">⏱️</button></div>
+    </div>
 
-                <div class="settings-link">
-                    <a href="/editprofile" style="text-decoration: none; cursor: pointer; font-size: 20px;" title="Edit Profile">🌣</a>
-                </div>
-                
-                <div class="analytics-link">
-                    <a href="{{ url_for('analytics') }}" style="text-decoration: none; cursor: pointer;">
-                        📊 Analytics
-                    </a>
-                </div>
+<div class="right">
 
-                <button id="openTimer" class="btn" title="Timer">⏱</button>
 
-                <div class="calendar-link">
-                    <a href="{{ url_for('calendar_view') }}" title="View Calendar" style="text-decoration: none; cursor: pointer; font-size: 20px;">
-                       📅
-                    </a>
-                </div>
-            </div>
-        </div> {% if upcoming %}
-        <div class="alert-box" id="reminder-box">
-            <span class="close-btn" onclick="closeReminder()">&times;</span>
-            <h3>Upcoming Deadlines</h3>
-            {% for item in upcoming %}
-                <p><strong>{{ item.title }}</strong> is due on {{ item.deadline }} ({{ item.subject }})</p>
-            {% endfor %}
+
+    <div id="pomodoroPopup" class="pomodoro-popup">
+
+        <div class="popup-header">
+            <span id="mode">Work Time</span>
+            <button id="closeTimer">&times;</button>
         </div>
 
-        <script>
-        function closeReminder() {
-            document.getElementById("reminder-box").style.display = "none";
-        }
-        </script>
-        {% endif %}
-            
-        <h1>Your Dashboard</h1>
+        <h1 id="timer">25:00</h1>
+
+        <div class="buttons">
+            <button onclick="startTimer()">Start</button>
+            <button onclick="pauseTimer()">Pause</button>
+            <button onclick="resetTimer()">Reset</button>
+        </div>
+
+    </div>
+
+    </div>
+
+    <!-- Title -->
+    <h1>Your Dashboard</h1>
 
         <div class="cards-container">
             <h3>Registered Subjects</h3>
@@ -91,6 +63,8 @@
             </div>
         </div>
 
-    </div> <script src="{{ url_for('static', filename='pomodoro.js') }}"></script>
+
+<script src="{{ url_for('static', filename='pomodoro.js') }}"></script>
+
 </body>
 </html>
