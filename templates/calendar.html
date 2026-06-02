@@ -1,35 +1,123 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>Assignment Calendar</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css' rel='stylesheet' />
-    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+    
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        #calendar { max-width: 900px; margin: 0 auto; }
+        body { 
+            background-color: #f8f9fa; 
+            font-family: Arial, sans-serif; 
+        }
+        #calendar { 
+            max-width: 1000px; 
+            margin: 0 auto; 
+        }
+        /* Sedikit hiasan untuk mencantikkan kalendar */
+        .fc {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
     </style>
 </head>
 <body>
-    <h2>My Assignment Schedule</h2>
-    <a href="/dashboard">Back to Dashboard</a>
-    <hr>
-    <div id='calendar'></div>
 
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        var calendarEl = document.getElementById('calendar');
-        var calendar = new FullCalendar.Calendar(calendarEl, {
-          initialView: 'dayGridMonth',
-          headerToolbar: {
-            left: 'prev,next today',
-            center: 'title',
-            right: ''
-          },
-          // This fetches the data from your Flask route
-          events: '/api/assignments' 
-        });
-        calendar.render();
-      });
-    </script>
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+            <h2 class="fw-bold text-dark">Calendar View</h2>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary btn-sm">Back to Dashboard</a>
+        </div>
+        
+        <div class="d-flex gap-3 align-items-end" style="max-width: 500px;">
+            <div style="width: 250px;">
+                <label for="calendarFilter" class="form-label small fw-bold mb-1 text-secondary">Filter by Subject:</label>
+                <select id="calendarFilter" class="form-select shadow-sm">
+                    <option value="All">-- All Subjects --</option>
+                    {% for subj in subjects %}
+                        <option value="{{ subj }}">{{ subj }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="width: 100px;" id="colorPickerContainer">
+                <label for="subjectColorPicker" class="form-label small fw-bold mb-1 text-secondary">Set Color:</label>
+                <input type="color" id="subjectColorPicker" class="form-control form-control-color shadow-sm w-100" value="#3788d8" title="Choose your color" disabled>
+            </div>
+        </div>
+    </div>
+
+    <div id='calendar'></div>
+</div>
+    <div id='calendar'></div>
+</div>
+
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var filterEl = document.getElementById('calendarFilter');
+    var colorPicker = document.getElementById('subjectColorPicker');
+
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
+        events: function(info, successCallback, failureCallback) {
+            var selectedSubject = filterEl.value;
+            fetch('/api/assignments?subject_filter=' + encodeURIComponent(selectedSubject))
+                .then(response => response.json())
+                .then(data => successCallback(data))
+                .catch(error => failureCallback(error));
+        }
+    });
+    calendar.render();
+
+    // 1. Kawal fungsi aktif/nyahaktif Color Picker
+    filterEl.addEventListener('change', function() {
+        if (filterEl.value === 'All') {
+            colorPicker.disabled = true; // Jangan beri tukar warna jika pilih "All Subjects"
+        } else {
+            colorPicker.disabled = false; // Aktifkan jika subjek spesifik dipilih
+        }
+        calendar.refetchEvents();
+    });
+
+    // 2. Apabila user selesai pilih warna baru dari kotak warna
+    colorPicker.addEventListener('change', function() {
+        var selectedSubject = filterEl.value;
+        var newColor = colorPicker.value;
+
+        if (selectedSubject === 'All') return;
+
+        // Hantar warna baru ke database menggunakan AJAX POST
+        fetch('/api/save-subject-color', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                subject: selectedSubject,
+                color: newColor
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Refresh kalendar serta-merta untuk tunjuk warna baru
+                calendar.refetchEvents();
+            } else {
+                alert('Gagal menyimpan warna baru.');
+            }
+        })
+        .catch(error => console.error('Error saving color:', error));
+    });
+});
+</script>
+
 </body>
 </html>

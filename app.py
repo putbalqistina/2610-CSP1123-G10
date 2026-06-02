@@ -40,6 +40,23 @@ def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'docx', 'xlsx', 'zip'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def init_color_db():
+    conn = get_db()
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS subject_colors (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_email TEXT,
+            subject TEXT,
+            color_code TEXT,
+            UNIQUE(user_email, subject)
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+# Panggil fungsi ini semasa startup aplikasi Flask
+init_color_db()
+
 # --- Data Stores ---
 
 subjects = [
@@ -157,6 +174,13 @@ def dashboard():
         return redirect(url_for('login'))
 
     conn = get_db()
+    
+    # 1. Ambil data user dari database (Ini sudah betul)
+    user_data = conn.execute(
+        "SELECT * FROM users WHERE email = ? OR username = ?", 
+        (user_email, user_email)
+    ).fetchone()
+    
     selected_filter = request.args.get('subject_filter', 'All')
 
     subject_rows = conn.execute(
@@ -189,7 +213,9 @@ def dashboard():
             pass
 
     conn.close()
-    return render_template('dashboard.html', subjects=user_subjects, assignments=assignments, upcoming=upcoming)
+    
+    # PERUBAHAN DI SINI: Tambah 'user=user_data' di hujung sekali supaya HTML boleh guna maklumat user
+    return render_template('dashboard.html', subjects=user_subjects, assignments=assignments, upcoming=upcoming, user=user_data)
 
 
 @app.route('/editprofile', methods=['GET', 'POST'])
@@ -344,38 +370,94 @@ def get_calendar_assignments():
     if not user_email:
         return json.dumps([])
 
+    selected_subject = request.args.get('subject_filter', 'All')
+
     conn = get_db()
-    rows = conn.execute(
-        "SELECT title, deadline, subject FROM assignments WHERE user_email = ?",
+    
+    # 1. Ambil data tugasan
+    if selected_subject == 'All' or selected_subject == '':
+        rows = conn.execute(
+            "SELECT title, deadline, subject FROM assignments WHERE user_email = ?",
+            (user_email,)
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT title, deadline, subject FROM assignments WHERE user_email = ? AND subject = ?",
+            (user_email, selected_subject)
+        ).fetchall()
+
+    # 2. Ambil peta warna (color map) yang telah disimpan oleh user ini
+    color_rows = conn.execute(
+        "SELECT subject, color_code FROM subject_colors WHERE user_email = ?",
         (user_email,)
     ).fetchall()
+    
+    # Tukar kepada dictionary python { 'Nama Subjek': '#HEXCOLOR' }
+    user_colors = {c_row['subject']: c_row['color_code'] for c_row in color_rows}
     conn.close()
 
     events = []
     for row in rows:
+        subj = row['subject']
+        # Semak jika user ada set warna sendiri, jika tiada guna warna default biru
+        chosen_color = user_colors.get(subj, "#3788d8")
+
         events.append({
-            "title": f"[{row['subject']}] {row['title']}",
+            "title": f"[{subj}] {row['title']}",
             "start": row['deadline'], 
             "allDay": True,
-            "color": "#3788d8"
+            "color": chosen_color
         })
     
     return json.dumps(events)
 
+@app.route('/api/save-subject-color', methods=['POST'])
+def save_subject_color():
+    user_email = session.get('user')
+    if not user_email:
+        return json.dumps({"status": "error", "message": "Unauthorized"}), 401
+
+    data = request.json
+    subject = data.get('subject')
+    color_code = data.get('color')
+
+    if not subject or not color_code:
+        return json.dumps({"status": "error", "message": "Missing data"}), 400
+
+    conn = get_db()
+    try:
+        # Guna INSERT OR REPLACE supaya jika warna sudah ada, ia akan dikemas kini (update)
+        conn.execute('''
+            INSERT OR REPLACE INTO subject_colors (user_email, subject, color_code)
+            VALUES (?, ?, ?)
+        ''', (user_email, subject, color_code))
+        conn.commit()
+        status = "success"
+    except Exception as e:
+        status = "error"
+    finally:
+        conn.close()
+
+    return json.dumps({"status": status})
 
 @app.route('/calendar')
 def calendar_view():
     if 'user' not in session:
         return redirect(url_for('login'))
-    return render_template('calendar.html')
-
-
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(
-        app.config['UPLOAD_FOLDER'],
-        filename
-    )
+        
+    user_email = session.get('user')
+    conn = get_db()
+    
+    # Ambil senarai unik subjek yang didaftarkan oleh user ini sahaja
+    subject_rows = conn.execute(
+        "SELECT DISTINCT subject FROM assignments WHERE user_email = ?", 
+        (user_email,)
+    ).fetchall()
+    user_subjects = [row['subject'] for row in subject_rows]
+    conn.close()
+    
+    # Hantar senarai subjek ke frontend calendar.html
+    return render_template('calendar.html', subjects=user_subjects)
 
 
 @app.route('/delete/<filename>')

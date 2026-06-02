@@ -346,3 +346,35 @@ textarea {
     font-size: 22px;
     font-weight: bold;
 }
+
+.assignments-container {
+            margin-top: 40px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .assignment-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .assignment-table th, .assignment-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .assignment-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .status-tag {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .status-todo { background: #ffeeba; color: #856404; }
+        .status-ongoing { background: #b8daff; color: #004085; }
+        .status-completed { background: #c3e6cb; color: #155724; }
