@@ -393,8 +393,19 @@ def analytics():
 
 @app.route('/subject/<code>')
 def subject(code):
-    short_code = code.split(" - ")[0].strip()
-    assignments = assignments_data.get(short_code, [])
+    user_email = session.get('user')
+    if not user_email:
+        return redirect(url_for('login'))
+
+    # Ambil data assignment dari database berdasarkan email user DAN subjek yang dipilih
+    conn = get_db()
+    assignments = conn.execute(
+        "SELECT * FROM assignments WHERE user_email = ? AND subject = ?", 
+        (user_email, code)
+    ).fetchall()
+    conn.close()
+
+    # Hantar data 'assignments' dari database ke template subject.html
     return render_template('subject.html', code=code, assignments=assignments)
 
 
