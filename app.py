@@ -72,7 +72,7 @@ def send_email(to_email, subject, body):
         smtp.login(sender, password)
         smtp.send_message(msg)
 
-def check_deadlines():
+def check_deadlines(): 
 
     conn = get_db()
 
