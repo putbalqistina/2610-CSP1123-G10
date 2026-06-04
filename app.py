@@ -1,23 +1,58 @@
-from flask import Flask, render_template, request, redirect, session, url_for
-import sqlite3
-from flask_apscheduler import APScheduler
-import datetime
-import smtplib
-from email.mime.text import MIMEText
-from datetime import datetime, timedelta
-import schedule
-import time
 import os
+import sqlite3
+import json
+import smtplib
+from datetime import datetime, timedelta
+from email.mime.text import MIMEText
+import uuid
+
+from flask import Flask, render_template, request, redirect, session, url_for, send_from_directory
+from flask_apscheduler import APScheduler
+from werkzeug.utils import secure_filename
+
 app = Flask(__name__)
 app.secret_key = "secretkey"
-
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
+
+# Ensure upload folder directory structure exists on startup
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Locate and load subjects.json path safely
+base_path = os.path.dirname(__file__)
+json_path = os.path.join(base_path, 'subjects.json')
+
+# --- Helper Functions ---
 
 def get_db():
     conn = sqlite3.connect("database.db")
     conn.row_factory = sqlite3.Row
     return conn
 
+def load_mmu_subjects():
+    try:
+        with open(json_path, 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return {}
+
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'docx', 'xlsx', 'zip'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS 
+
+def init_color_db():
+    conn = get_db()
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS subject_colors (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_email TEXT,
+            subject TEXT,
+            color_code TEXT,
+            UNIQUE(user_email, subject)
+        )
+    ''')
+    conn.commit()
+    conn.close()
 
 def init_db():
     conn = get_db()
@@ -56,8 +91,11 @@ def init_db():
     conn.commit()
     conn.close()
 
-
 init_db()
+
+@app.route("/")
+def home():
+    return render_template("landingpage.html")
 
 def send_email(to_email, subject, body):
     sender = "assignmate4u@gmail.com"
@@ -96,79 +134,26 @@ def check_deadlines():
                 "UPDATE assignments SET email_sent = 1 WHERE id = ?",
                 (a["id"],)
             )
+
+def init_color_db():
+    conn = get_db()
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS subject_colors (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_email TEXT,
+            subject TEXT,
+            color_code TEXT,
+            UNIQUE(user_email, subject)
+        )
+    ''')
+
     conn.commit()
     conn.close()
 
+# Panggil fungsi ini semasa startup aplikasi Flask
+init_color_db()
 
-
-@app.route("/")
-def home():
-    return render_template("landingpage.html")
-
-
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        login_input = request.form["login"].strip().lower()
-        password = request.form["password"]
-
-        conn = get_db()
-        user = conn.execute(
-            """
-            SELECT * FROM users
-            WHERE (email = ? OR username = ?)
-            AND password = ?
-            """,
-            (login_input, login_input, password)
-        ).fetchone()
-        conn.close()
-
-        if user:
-            session["user"] = user["email"]
-            return redirect("/dashboard")
-        else:
-            return "Invalid credentials ❌"
-
-    return render_template("login.html")
-
-
-@app.route("/register", methods=["GET", "POST"])
-def register():
-    if request.method == "POST":
-        username = request.form["username"].strip().lower()
-        email = request.form["email"].strip().lower()
-        password = request.form["password"]
-
-        conn = get_db()
-
-        existing_user = conn.execute(
-            "SELECT * FROM users WHERE email = ? OR username = ?",
-            (email, username)
-        ).fetchone()
-
-        if existing_user:
-            conn.close()
-            return render_template(
-                "register.html",
-                error="Email or username already registered!",
-                success=False
-            )
-
-        conn.execute(
-            """
-            INSERT INTO users (username, email, password)
-            VALUES (?, ?, ?)
-            """,
-            (username, email, password)
-        )
-
-        conn.commit()
-        conn.close()
-
-        return render_template("register.html", success=True)
-
-    return render_template("register.html", success=False)
-
+# --- Data Stores ---
 
 subjects = [
     {"code": "CSP1123", "name": "Mini IT Project"},
@@ -181,129 +166,197 @@ assignment_store = {
     "Proposal": {
         "description": "This is assignment description",
         "comments": ["my part - done", "need to finish before 20/4"],
-        "attachment": None
+        "attachment": []
     }
 }
 
-# dummy assignments
 assignments_data = {
     "CSP1123": ["Proposal", "Final Report"],
     "CDS1114": ["Lab 1", "Lab 2"],
     "CMT1134": ["Quiz 1", "Test 2"],
     "LCT1113": ["Blended Learning Week 2", "20% Presentation", "Debate Points"]
-    }
-@app.route("/add_assignment", methods=["GET", "POST"])
-def add_assignment():
-    if "user" not in session:
-        return redirect("/login")
+}
 
-    user_email = session["user"]
+# --- Routes ---
 
+@app.route('/')
+def index():
+    if 'user' in session:
+        return redirect(url_for('dashboard'))
+    return redirect(url_for('login'))
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
     if request.method == "POST":
-        subject = request.form.get("subject")
-        title = request.form.get("title")
-        deadline = request.form.get("deadline")
+        login_input = request.form["login"].strip().lower()
+        password = request.form["password"]
 
         conn = get_db()
+        user = conn.execute(
+            "SELECT * FROM users WHERE (email = ? OR username = ?) AND password = ?",
+            (login_input, login_input, password)
+        ).fetchone()
+        conn.close()
+
+        if user:
+            session["user"] = user["email"]
+            return redirect(url_for("dashboard"))
+        else:
+            return "Invalid credentials ❌", 401
+
+    return render_template("login.html")
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        username = request.form["username"].strip()
+        email = request.form["email"].strip().lower()
+        password = request.form["password"]
+
+        conn = get_db()
+        existing_user = conn.execute(
+            "SELECT * FROM users WHERE email = ? OR username = ?",
+            (email, username)
+        ).fetchone()
+
+        if existing_user:
+            conn.close()
+            return render_template("register.html", error="Email or Username already registered!")
+
         conn.execute(
-            """
-            INSERT INTO assignments (subject, title, deadline, user_email)
-            VALUES (?, ?, ?, ?)
-            """,
-            (subject, title, deadline, user_email)
+            "INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
+            (username, email, password)
         )
         conn.commit()
         conn.close()
 
-        return redirect("/dashboard")
+        return redirect(url_for("login"))
 
-    return render_template("add_assignment.html", subjects=subjects)
+    return render_template("register.html")
 
 
-@app.route("/dashboard")
+@app.route('/add_assignment', methods=['GET', 'POST'])
+def add_assignment():
+    user_email = session.get('user')
+    if not user_email:
+        return redirect(url_for("login"))
+    
+    mmu_data = load_mmu_subjects() 
+
+    if request.method == 'POST':
+        subject = request.form.get('subject')
+        title = request.form.get('title')
+        deadline = request.form.get('deadline')
+        
+        conn = get_db()
+        conn.execute(
+            "INSERT INTO assignments (subject, title, deadline, user_email, status) VALUES (?, ?, ?, ?, 'to_do')",
+            (subject, title, deadline, user_email)
+        )
+        conn.commit()
+        conn.close()
+        
+        return redirect(url_for("dashboard"))
+
+    return render_template("add_assignment.html", mmu_data=mmu_data)
+
+
+@app.route('/dashboard')
 def dashboard():
-    if "user" not in session:
-        return redirect("/login")
-
-    user_email = session["user"]
+    user_email = session.get('user')
+    if not user_email:
+        return redirect(url_for('login'))
 
     conn = get_db()
+    
+    # 1. Ambil data user dari database (Ini sudah betul)
+    user_data = conn.execute(
+        "SELECT * FROM users WHERE email = ? OR username = ?", 
+        (user_email, user_email)
+    ).fetchone()
+    
+    selected_filter = request.args.get('subject_filter', 'All')
 
-    assignments = conn.execute(
-        """
-        SELECT * FROM assignments
-        WHERE user_email = ?
-        ORDER BY deadline ASC
-        """,
+    subject_rows = conn.execute(
+        "SELECT DISTINCT subject FROM assignments WHERE user_email = ?", 
         (user_email,)
     ).fetchall()
+    user_subjects = [row['subject'] for row in subject_rows]
 
-    conn.close()
-
-
-
+    if selected_filter == 'All' or selected_filter == '':
+        assignments = conn.execute(
+            "SELECT * FROM assignments WHERE user_email = ?", 
+            (user_email,)
+        ).fetchall()
+    else:
+        assignments = conn.execute(
+            "SELECT * FROM assignments WHERE user_email = ? AND subject = ?", 
+            (user_email, selected_filter)
+        ).fetchall()
+    
     today = datetime.today().date()
-
     upcoming = []
-
+    
     for a in assignments:
-        deadline = datetime.strptime(a["deadline"], "%Y-%m-%d").date()
-
-        days_left = (deadline - today).days
-
-        # only assignments due within next 3 days
-        if 0 <= days_left <= 3:
-            upcoming.append(a)
+        try:
+            deadline = datetime.strptime(a["deadline"], "%Y-%m-%d").date()
+            days_left = (deadline - today).days
+            if 0 <= days_left <= 3:
+                upcoming.append(a)
+        except (ValueError, TypeError):
+            pass
 
     conn.close()
+    
+    # PERUBAHAN DI SINI: Tambah 'user=user_data' di hujung sekali supaya HTML boleh guna maklumat user
+    return render_template('dashboard.html', subjects=user_subjects, assignments=assignments, upcoming=upcoming, user=user_data)
+
+
+@app.route('/editprofile', methods=['GET', 'POST'])
+def editprofile():
+    user_identifier = session.get('user') 
+    if not user_identifier:
+        return redirect(url_for('login'))
 
     conn = get_db()
-    cursor = conn.cursor()
 
-    cursor.execute("SELECT COUNT(*) FROM assignments")
-    total = cursor.fetchone()[0]
+    if request.method == 'POST':
+        full_name = request.form.get('full_name')
+        username = request.form.get('username')
+        bio = request.form.get('bio')
+        gender = request.form.get('gender')
 
-    cursor.execute("SELECT COUNT(*) FROM assignments WHERE status = 'completed'")
-    completed = cursor.fetchone()[0]
+        conn.execute('''
+            UPDATE users 
+            SET full_name = ?, username = ?, bio = ?, gender = ? 
+            WHERE email = ? OR username = ?
+        ''', (full_name, username, bio, gender, user_identifier, user_identifier))
+        
+        conn.commit()
+        conn.close()
+        return redirect(url_for('dashboard'))
 
-    cursor.execute("SELECT COUNT(*) FROM assignments WHERE status = 'ongoing'")
-    ongoing = cursor.fetchone()[0]
-
-    cursor.execute("SELECT COUNT(*) FROM assignments WHERE status = 'to_do'")
-    todo = cursor.fetchone()[0]
-
+    user_data = conn.execute(
+        "SELECT * FROM users WHERE email = ? OR username = ?", 
+        (user_identifier, user_identifier)
+    ).fetchone()
     conn.close()
+    
+    return render_template('index.html', user=user_data)
 
-    if total == 0:
-        completed_pct = ongoing_pct = todo_pct = 0
-    else:
-        completed_pct = (completed / total) * 100
-        ongoing_pct = (ongoing / total) * 100
-        todo_pct = (todo / total) * 100
-
-    return render_template(
-        "dashboard.html",
-        subjects=subjects,
-        assignments=assignments,
-        upcoming=upcoming,
-    )
 
 @app.route("/analytics")
 def analytics():
-
-    if "user" not in session:
-        return redirect("/login")
+    user_email = session.get("user")
+    if not user_email:
+        return redirect(url_for("login"))
 
     conn = get_db()
-
     assignments = conn.execute(
-        """
-        SELECT * FROM assignments
-        WHERE user_email = ?
-        """,
-        (session["user"],)
+        "SELECT * FROM assignments WHERE user_email = ?", (user_email,)
     ).fetchall()
-
     conn.close()
 
     completed = 0
@@ -311,13 +364,10 @@ def analytics():
     todo = 0
 
     for a in assignments:
-
         if a["status"] == "completed":
             completed += 1
-
         elif a["status"] == "ongoing":
             ongoing += 1
-
         elif a["status"] == "to_do":
             todo += 1
 
@@ -327,11 +377,8 @@ def analytics():
         completed_pct = round((completed / total) * 100)
         ongoing_pct = round((ongoing / total) * 100)
         todo_pct = round((todo / total) * 100)
-
     else:
-        completed_pct = 0
-        ongoing_pct = 0
-        todo_pct = 0
+        completed_pct = ongoing_pct = todo_pct = 0
 
     return render_template(
         "analytics.html",
@@ -343,99 +390,65 @@ def analytics():
         todo_pct=todo_pct
     )
 
+
 @app.route('/subject/<code>')
 def subject(code):
-    assignments = assignments_data.get(code, [])
+    short_code = code.split(" - ")[0].strip()
+    assignments = assignments_data.get(short_code, [])
     return render_template('subject.html', code=code, assignments=assignments)
 
-@app.route("/edit_profile", methods=["GET", "POST"])
-def edit_profile():
-    if "user" not in session:
-        return redirect("/login")
-
-    user_email = session["user"]
-    conn = get_db()
-
-    if request.method == "POST":
-        full_name = request.form.get("full_name")
-        bio = request.form.get("bio")
-        gender = request.form.get("gender")
-
-        conn.execute(
-            """
-            UPDATE users
-            SET full_name = ?, bio = ?, gender = ?
-            WHERE email = ?
-            """,
-            (full_name, bio, gender, user_email)
-        )
-
-        conn.commit()
-        conn.close()
-
-        return redirect("/dashboard")
-
-    user_data = conn.execute(
-        "SELECT * FROM users WHERE email = ?",
-        (user_email,)
-    ).fetchone()
-
-    conn.close()
-
-    return render_template("index.html", user=user_data)
 
 @app.route('/assignment/<title>', methods=["GET", "POST"])
 def assignment(title):
-
     if title not in assignment_store:
         assignment_store[title] = {
             "description": "",
             "comments": [],
-            "attachment": None
+            "attachment": []
         }
 
     data = assignment_store[title]
 
     if request.method == "POST":
-
-        # update description
         new_desc = request.form.get("description")
         if new_desc:
             data["description"] = new_desc
 
-        # add comment
         new_comment = request.form.get("comment")
         if new_comment:
             data["comments"].append(new_comment)
 
-        # file upload
         file = request.files.get("file")
-        if file and file.filename != "":
-            path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+
+        if (
+            file and
+            file.filename != "" and
+            len(data["attachment"]) < 3 and 
+            allowed_file(file.filename)
+        ):
+            filename = secure_filename(file.filename)
+            unique_filename = str(uuid.uuid4()) + "_" + filename
+            path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
             file.save(path)
-            data["attachment"] = file.filename
+            data["attachment"].append(unique_filename)
 
         status = request.form.get("status")
-        conn = sqlite3.connect("database.db")
-        cursor = conn.cursor()
-
-        cursor.execute("""
+        conn = get_db()
+        conn.execute("""
             UPDATE assignments 
             SET status = ?
             WHERE title = ?
         """, (status, title))
-
         conn.commit()
         conn.close()
+        
         return redirect(url_for("assignment", title=title))
     
-    conn = sqlite3.connect("database.db")
-    cursor = conn.cursor()
-
-    cursor.execute("SELECT status FROM assignments WHERE title = ?", (title,))
-    assignment = cursor.fetchone()
-
+    conn = get_db()
+    assignment_row = conn.execute("SELECT status FROM assignments WHERE title = ?", (title,)).fetchone()
     conn.close()
+
+    status = assignment_row["status"] if assignment_row else "to_do"
 
     return render_template(
         "assignment.html",
@@ -443,14 +456,129 @@ def assignment(title):
         description=data["description"],
         comments=data["comments"],
         attachment=data["attachment"],
-        status = assignment[0] if assignment else "to_do"
+        status=status
     )
 
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect("/login")
+
+@app.route('/api/assignments')
+def get_calendar_assignments():
+    user_email = session.get('user')
+    if not user_email:
+        return json.dumps([])
+
+    selected_subject = request.args.get('subject_filter', 'All')
+
+    conn = get_db()
+    
+    # 1. Ambil data tugasan
+    if selected_subject == 'All' or selected_subject == '':
+        rows = conn.execute(
+            "SELECT title, deadline, subject FROM assignments WHERE user_email = ?",
+            (user_email,)
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT title, deadline, subject FROM assignments WHERE user_email = ? AND subject = ?",
+            (user_email, selected_subject)
+        ).fetchall()
+
+    # 2. Ambil peta warna (color map) yang telah disimpan oleh user ini
+    color_rows = conn.execute(
+        "SELECT subject, color_code FROM subject_colors WHERE user_email = ?",
+        (user_email,)
+    ).fetchall()
+    
+    # Tukar kepada dictionary python { 'Nama Subjek': '#HEXCOLOR' }
+    user_colors = {c_row['subject']: c_row['color_code'] for c_row in color_rows}
+    conn.close()
+
+    events = []
+    for row in rows:
+        subj = row['subject']
+        # Semak jika user ada set warna sendiri, jika tiada guna warna default biru
+        chosen_color = user_colors.get(subj, "#3788d8")
+
+        events.append({
+            "title": f"[{subj}] {row['title']}",
+            "start": row['deadline'], 
+            "allDay": True,
+            "color": chosen_color
+        })
+    
+    return json.dumps(events)
+
+@app.route('/api/save-subject-color', methods=['POST'])
+def save_subject_color():
+    user_email = session.get('user')
+    if not user_email:
+        return json.dumps({"status": "error", "message": "Unauthorized"}), 401
+
+    data = request.json
+    subject = data.get('subject')
+    color_code = data.get('color')
+
+    if not subject or not color_code:
+        return json.dumps({"status": "error", "message": "Missing data"}), 400
+
+    conn = get_db()
+    try:
+        # Guna INSERT OR REPLACE supaya jika warna sudah ada, ia akan dikemas kini (update)
+        conn.execute('''
+            INSERT OR REPLACE INTO subject_colors (user_email, subject, color_code)
+            VALUES (?, ?, ?)
+        ''', (user_email, subject, color_code))
+        conn.commit()
+        status = "success"
+    except Exception as e:
+        status = "error"
+    finally:
+        conn.close()
+
+    return json.dumps({"status": status})
+
+@app.route('/calendar')
+def calendar_view():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+        
+    user_email = session.get('user')
+    conn = get_db()
+    
+    # Ambil senarai unik subjek yang didaftarkan oleh user ini sahaja
+    subject_rows = conn.execute(
+        "SELECT DISTINCT subject FROM assignments WHERE user_email = ?", 
+        (user_email,)
+    ).fetchall()
+    user_subjects = [row['subject'] for row in subject_rows]
+    conn.close()
+    
+    # Hantar senarai subjek ke frontend calendar.html
+    return render_template('calendar.html', subjects=user_subjects)
 
 
-if __name__ == "__main__":
+@app.route('/delete/<filename>')
+def delete_file(filename):
+    path = os.path.join(
+        app.config['UPLOAD_FOLDER'],
+        filename
+    )
+
+    if os.path.exists(path):
+        os.remove(path)
+
+    for assignment in assignment_store.values():
+        if filename in assignment["attachment"]:
+            assignment["attachment"].remove(filename)
+
+    return redirect(request.referrer or url_for('dashboard'))
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(
+        app.config['UPLOAD_FOLDER'],
+        filename
+    )
+
+
+if __name__ == '__main__':
     app.run(debug=True)

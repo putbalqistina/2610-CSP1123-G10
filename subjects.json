@@ -1,0 +1,64 @@
+{
+  "Foundation in Computing (FCI)": [
+    {"code": "CCT1114", "name": "Introduction to Computing Technologies"},
+    {"code": "CSP1114", "name": "Problem Solving and Program Design"},
+    {"code": "CDS1114", "name": "Introduction to Digital Systems"},
+    {"code": "CMF1114", "name": "Multimedia Fundamentals"},
+    {"code": "CMT1114", "name": "Mathematics I"},
+    {"code": "CMT1124", "name": "Mathematics II"},
+    {"code": "CMT1134", "name": "Mathematics III"},
+    {"code": "CSP1123", "name": "Mini IT Project"},
+    {"code": "LCE1113", "name": "Communicative English"},
+    {"code": "LEE1113", "name": "Essential English"},
+    {"code": "LAE1113", "name": "Academic English"},
+    {"code": "LCT1113", "name": "Critical Thinking"}
+  ],
+
+  "Foundation in Engineering (FOE)": [
+    {"code": "FMA1114", "name": "Pre-Calculus"},
+    {"code": "FMA1124", "name": "Calculus"},
+    {"code": "FMA1134", "name": "Trigonometry and Coordinate Geometry"},
+    {"code": "FPH1114", "name": "Mechanics"},
+    {"code": "FPH1124", "name": "Electricity and Magnetism"},
+    {"code": "FCH1114", "name": "Chemistry"},
+    {"code": "FCS1114", "name": "Basic Computing and Programming"},
+    {"code": "LCE1113", "name": "Communicative English"},
+    {"code": "LEE1113", "name": "Essential English"},
+    {"code": "LAE1113", "name": "Academic English"}
+  ],
+
+  "Foundation in Management (FOM)": [
+    {"code": "LCE1113", "name": "Communicative English"},
+    {"code": "GCQ1114", "name": "Essentials Mathematics"},
+    {"code": "GCG1114", "name": "Essentials of Financial Accounting"},
+    {"code": "GCE1114", "name": "Essentials of Microeconomics"},
+    {"code": "GCB1114", "name": "University Study Skills"},
+    {"code": "FOM1114", "name": "Introduction to Business"},
+    {"code": "FOM1124", "name": "Introduction to Marketing"},
+    {"code": "FOM1134", "name": "Introduction to Law"},
+    {"code": "FOM1144", "name": "Essential Statistics"},
+    {"code": "FOM1154", "name": "Management Accounting"}
+  ],
+
+  "Foundation in Creative Multimedia (FCM)": [
+    {"code": "FCM1114", "name": "Visual Research and Communication"},
+    {"code": "FCM1124", "name": "Life Drawing"},
+    {"code": "FCM1134", "name": "Basic Photography"},
+    {"code": "FCM1144", "name": "Computer Graphics"},
+    {"code": "FCM1154", "name": "Storytelling and Mythology"},
+    {"code": "FCM1164", "name": "Creative Photography"},
+    {"code": "FCM1174", "name": "Design and Art Appreciation"}
+  ],
+
+  "Foundation in Science and Technology (FIST)": [
+    {"code": "FST1114", "name": "Algebra"},
+    {"code": "FST1124", "name": "Trigonometry"},
+    {"code": "FST1134", "name": "Calculus"},
+    {"code": "FST1144", "name": "Computer Applications"},
+    {"code": "FST1154", "name": "Introduction to Probability and Statistics"},
+    {"code": "FST1164", "name": "Problem Solving and Programming"},
+    {"code": "FST1174", "name": "Introduction to Multimedia"},
+    {"code": "FST1184", "name": "Electricity and Magnetism"},
+    {"code": "FST1194", "name": "Chemistry"}
+  ]
+}

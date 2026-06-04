@@ -1,78 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Dashboard</title>
-
-<link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <meta charset="UTF-8">
+    <title>Dashboard - AssignMate</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
 </head>
-
 <body>
 
-    
-<button class="add-btn" onclick="window.location.href='/add_assignment'">+</button>
+    <button class="add-btn" onclick="window.location.href='/add_assignment'" title="Add New Assignment">+</button>
 
-{% if upcoming %}
-<div class="alert-box" id="reminder-box">
+    <div class="dashboard">
 
-    <span class="close-btn" onclick="closeReminder()">&times;</span>
-
-    <h3>Upcoming Deadlines</h3>
-
-    {% for item in upcoming %}
-        <p>{{ item.title }} is due on {{ item.deadline }}</p>
-    {% endfor %}
-</div>
-
-<script>
-function closeReminder() {
-    document.getElementById("reminder-box").style.display = "none";
-}
-</script>
-
-{% endif %}
-
-<div class="dashboard">
-
-    <!-- Topbar -->
-    <div class="topbar">
-        <div>AssignMate</div>
-        <input type="text" placeholder="Search 🔍︎">
-        <div>Notifications | Filter</div>
-        <div class="analytics-link">
-        <a href="{{ url_for('analytics') }}" style="text-decoration: none; cursor: pointer;">
-        📊 Analytics
-        </a>
-        </div>
-        <div class="settings-link">
-        <a href="/edit_profile" style="text-decoration: none; cursor: pointer;">
-            🌣
-        </a>
-    </div>
-    </div>
-
-    
-    <!-- Title -->
-    <h1>Your Dashboard</h1>
-
-    <!-- Cards -->
-    <div class="cards">
-        <div class="card">
-        <h3>Subjects</h3>
-        {%if subjects %}
-            {% for subject in subjects %}
-                <a href="/subject/{{ subject.code }}">
-                    <div class="card">
-                        {{ subject.code }} - {{ subject.name }}
+        <div class="topbar">
+            <div class="brand">AssignMate</div>
+            
+            <div class="search-bar">
+                <input type="text" placeholder="Search 🔍︎">
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 15px;">
+                
+                <div class="nav-item dropdown">
+                    <span class="filter-btn">Notifications | Filter ▾</span>
+                    <div class="dropdown-content">
+                        <form action="/dashboard" method="GET">
+                            <div class="filter-group">
+                                <label for="subject_filter">Subject</label>
+                                <select name="subject_filter" id="subject_filter">
+                                    <option value="All" {% if request.args.get('subject_filter') == 'All' or not request.args.get('subject_filter') %}selected{% endif %}>All Subjects</option>
+                                    {% for subject in subjects %}
+                                        <option value="{{ subject }}" {% if request.args.get('subject_filter') == subject %}selected{% endif %}>{{ subject }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="apply-btn">Apply Filter</button>
+                        </form>
                     </div>
-                </a>
-            {% endfor %}
-            {% else %}
-            <p> No Assignments yet. Click + to add.</p>
-            {% endif %}
-        </div>
-    </div>
-</div>
+                </div>
 
+                <div class="settings-link">
+                    <a href="/editprofile" style="text-decoration: none; cursor: pointer; font-size: 20px;" title="Edit Profile">⚙️</a>
+                </div>
+                
+                <div class="analytics-link">
+                    <a href="{{ url_for('analytics') }}" style="text-decoration: none; cursor: pointer;">
+                        📊 Analytics
+                    </a>
+                </div>
+
+                <button id="openTimer" class="btn" title="Timer">⏱️</button>
+
+                <div class="calendar-link">
+                    <a href="{{ url_for('calendar_view') }}" title="View Calendar" style="text-decoration: none; cursor: pointer; font-size: 20px;">
+                       📅
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {% if upcoming %}
+        <div class="alert-box" id="reminder-box">
+            <span class="close-btn" onclick="closeReminder()">&times;</span>
+            <h3>⚠️ Upcoming Deadlines (Next 3 Days)</h3>
+            {% for item in upcoming %}
+                <p><strong>{{ item.title }}</strong> is due on {{ item.deadline }} ({{ item.subject }})</p>
+            {% endfor %}
+        </div>
+
+        <script>
+        function closeReminder() {
+            document.getElementById("reminder-box").style.display = "none";
+        }
+        </script>
+        {% endif %}
+
+        <div class="right">
+            <div id="pomodoroPopup" class="pomodoro-popup" style="display: none;">
+                <div class="popup-header">
+                    <span id="mode">Work Time</span>
+                    <button id="closeTimer">&times;</button>
+                </div>
+                <h1 id="timer">25:00</h1>
+                <div class="buttons">
+                    <button onclick="startTimer()">Start</button>
+                    <button onclick="pauseTimer()">Pause</button>
+                    <button onclick="resetTimer()">Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <h1>{% if user and user.username %}{{ user.username }}'s{% else %}Your{% endif %} Dashboard</h1>
+
+        <div class="cards-container">
+            <div class="cards">
+                {% if assignments %}
+                    {% set dipaparkan = [] %}
+                    {% for item in assignments %}
+                        {% if item.subject not in dipaparkan %}
+                            <a href="{{ url_for('subject', code=item.subject) }}" class="card-link">
+                                <div class="card">
+                                    <span class="subject-tag">{{ item.subject }}</span>
+                                </div>
+                            </a>
+                            {% if dipaparkan.append(item.subject) %}{% endif %}
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <p class="no-data">No active assignments or subjects found for this filter.</p>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='pomodoro.js') }}"></script>
 </body>
 </html>

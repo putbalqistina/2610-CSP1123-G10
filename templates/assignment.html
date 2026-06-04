@@ -30,7 +30,7 @@
         <div class="card">
             <h3>Assignment Description</h3>
             <form method="POST">
-                <textarea name="description" rows="4" style="width:100;">{{ description }}</textarea>
+                <textarea name="description">{{ description }}</textarea>
                 <button type="submit" class="btn btn-save">Save</button>
             </form>
         </div>
@@ -47,20 +47,46 @@
                     <button type="submit" class="btn btn-add">Add</button>
                 </form>
             </div>
+                <div class="card">
+                    <h3>Attachment</h3>
 
-            <div class="card">
-                <h3>Attachment</h3>
-                {% if attachment %}
-                    <p>📁 {{ attachment }}</p>
-                {% else %}
-                    <p>No file uploaded</p>
-                {% endif %}
+                    {% if attachment %}
+                        {% for file in attachment %}
 
-                <form method="POST" enctype="multipart/form-data">
-                    <input type="file" name="file">
-                    <button type="submit" class="btn btn-upload">Upload</button>
-                </form>
+                        <div class="file-box">
+
+                            <a href="{{ url_for('uploaded_file', filename=file) }}"
+                            target="_blank">
+                            {{ file }}
+                            </a>
+
+                            <a href="{{ url_for('delete_file', filename=file) }}"
+                            class="btn btn-delete">
+                            Delete
+                            </a>
+
+                        </div>
+
+                        {% endfor %}
+
+                    {% else %}
+                        <p>No file uploaded</p>
+                    {% endif %}
+
+                    {% if attachment|length < 3 %}
+                    <form method="POST" enctype="multipart/form-data">
+                        <input type="file" name="file">
+
+                        <button type="submit" class="btn btn-upload">
+                            Upload
+                        </button>
+                    </form>
+                    {% else %}
+                        <p>Maximum 3 files uploaded.</p>
+                    {% endif %}
+
             </div>
+
         </div>
 
         <div class="card">

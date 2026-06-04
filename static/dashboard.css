@@ -54,38 +54,134 @@ h1 {
     transform: translateY(-3px);
 }
 
+textarea {
+    width: 100%;
+    min-height: 250px;
+
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+
+    resize: vertical;
+
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+/*file box uploads*/
+.file-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    background: #f3f4f6;
+    padding: 12px;
+    border-radius: 10px;
+
+    margin-bottom: 15px;
+}
+
+.btn-delete {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-delete:hover {
+    background: #dc2626;
+}
+
 .add-btn {
     position: fixed;
     bottom: 30px;
     right: 30px;
 
-    width: 60px;
-    height: 60px;
+    width: 65px;
+    height: 65px;
 
     border-radius: 50%;
+    border: none;
 
-    background-color: #4CAF50;
+    background: linear-gradient(135deg, #4CAF50, #2e7d32);
     color: white;
 
-    font-size: 30px;
+    font-size: 32px;
     font-weight: bold;
 
-    border: none;
     cursor: pointer;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.25);
 
-    transition: all 0.3s ease;
+    transition: all 0.25s ease;
 }
 
+/* hover effect */
 .add-btn:hover {
+
     transform: scale(1.1);
     background-color: #45a049;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+
+/* Container Dropdown */
+.dropdown {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+}
+
+/* Isi Dropdown (Sembunyi secara default) */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    background-color: #ffffff;
+    min-width: 200px;
+    box-shadow: 0px 8px 16px rgba(0,0,0,0.1);
+    z-index: 1;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    text-align: left;
+}
+
+/* Tunjukkan dropdown bila hover atau klik */
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+/* Styling dalaman */
+.filter-group {
+    margin-bottom: 10px;
+}
+
+.filter-group label {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.filter-group select {
+    width: 100%;
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+.apply-btn {
+    width: 100%;
+    background-color: #2e4a3d; /* Warna ikut tema AssignMate */
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 5px;
 }
 
 .alert-box {
@@ -94,6 +190,134 @@ h1 {
     padding: 15px;
     border-radius: 10px;
     margin-bottom: 20px;
+
+    transform: translateY(-5px) scale(1.00)0;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+}
+
+/* click effect */
+.add-btn:active {
+    transform: scale(0.95);
+}
+
+/* glow effect */
+.add-btn::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: rgba(76, 175, 80, 0.4);
+    opacity: 0;
+    transition: 0.3s;
+}
+
+.add-btn:hover::after {
+    opacity: 1;
+    transform: scale(1.4);
+}
+
+/* base button */
+.btn {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+}
+
+/* SAVE button */
+.btn-save {
+    background: #4CAF50;
+    color: white;
+}
+
+.btn-save:hover {
+    background: #43a047;
+    transform: translateY(-2px);
+}
+
+/* ADD button */
+.btn-add {
+    background: #2196F3;
+    color: white;
+}
+
+.btn-add:hover {
+    background: #1e88e5;
+    transform: translateY(-2px);
+}
+
+/* UPLOAD button */
+.btn-upload {
+    background: #9c27b0;
+    color: white;
+}
+
+.btn-upload:hover {
+    background: #8e24aa;
+    transform: translateY(-2px);
+}
+
+/* click effect */
+.btn:active {
+    transform: scale(0.95);
+}
+
+/* popup right side */
+.right {
+    position: relative;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* popup kecil */
+.pomodoro-popup {
+    display: none;
+
+    position: absolute;
+    top: 50px;
+    right: 50px;
+
+    width: 260px;
+
+    background: white;
+    padding: 20px;
+
+    border-radius: 15px;
+
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+
+    z-index: 999;
+}
+
+/* popup top */
+.popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* close button */
+#closeTimer {
+    border: none;
+    background: none;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+/* timer text */
+#timer {
+    font-size: 42px;
+    text-align: center;
+    margin: 20px 0;
+
 }
 
 
@@ -109,3 +333,49 @@ h1 {
     font-size: 22px;
     font-weight: bold;
 }
+
+
+.alert-box {
+    position: relative;
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    cursor: pointer;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.assignments-container {
+            margin-top: 40px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .assignment-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .assignment-table th, .assignment-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        .assignment-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .status-tag {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            text-transform: uppercase;
+            font-weight: bold;
+        }
+        .status-todo { background: #ffeeba; color: #856404; }
+        .status-ongoing { background: #b8daff; color: #004085; }
+        .status-completed { background: #c3e6cb; color: #155724; }
