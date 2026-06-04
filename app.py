@@ -174,14 +174,13 @@ def dashboard():
         return redirect(url_for('login'))
 
     conn = get_db()
-    
-    # 1. Ambil data user dari database (Ini sudah betul)
     user_data = conn.execute(
         "SELECT * FROM users WHERE email = ? OR username = ?", 
         (user_email, user_email)
     ).fetchone()
     
     selected_filter = request.args.get('subject_filter', 'All')
+    
 
     subject_rows = conn.execute(
         "SELECT DISTINCT subject FROM assignments WHERE user_email = ?", 
@@ -213,9 +212,7 @@ def dashboard():
             pass
 
     conn.close()
-    
-    # PERUBAHAN DI SINI: Tambah 'user=user_data' di hujung sekali supaya HTML boleh guna maklumat user
-    return render_template('dashboard.html', subjects=user_subjects, assignments=assignments, upcoming=upcoming, user=user_data)
+    return render_template('dashboard.html', subjects=user_subjects, assignments=assignments, upcoming=upcoming)
 
 
 @app.route('/editprofile', methods=['GET', 'POST'])
