@@ -94,15 +94,15 @@
         <div class="cards-container">
             <div class="cards">
                 {% if assignments %}
-                    {% set dipaparkan = [] %}
+                    {% set displayed = [] %}
                     {% for item in assignments %}
-                        {% if item.subject not in dipaparkan %}
+                        {% if item.subject not in displayed %}
                             <a href="{{ url_for('subject', code=item.subject) }}" class="card-link">
                                 <div class="card">
                                     <span class="subject-tag">{{ item.subject }}</span>
                                 </div>
                             </a>
-                            {% if dipaparkan.append(item.subject) %}{% endif %}
+                            {% if displayed.append(item.subject) %}{% endif %}
                         {% endif %}
                     {% endfor %}
                 {% else %}

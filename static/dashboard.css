@@ -183,13 +183,13 @@ textarea {
     cursor: pointer;
     margin-top: 5px;
 }
+
 .alert-box {
     background: #fff3cd;
     border: 1px solid #ffe69c;
     padding: 15px;
     border-radius: 10px;
     margin-bottom: 20px;
-
     transform: translateY(-5px) scale(1.00);
     box-shadow: 0 15px 30px rgba(0,0,0,0.3);
 }

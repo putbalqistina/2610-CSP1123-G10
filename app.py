@@ -38,7 +38,7 @@ def load_mmu_subjects():
 
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'docx', 'xlsx', 'zip'}
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS 
 
 def init_color_db():
     conn = get_db()
@@ -51,6 +51,102 @@ def init_color_db():
             UNIQUE(user_email, subject)
         )
     ''')
+    conn.commit()
+    conn.close()
+
+def init_db():
+    conn = get_db()
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            email TEXT NOT NULL UNIQUE,
+            password TEXT NOT NULL,
+            full_name TEXT,
+            bio TEXT,
+            gender TEXT,
+            profile_pic TEXT
+        )
+    """)
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS assignments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            subject TEXT NOT NULL,
+            title TEXT NOT NULL,
+            deadline TEXT NOT NULL,
+            user_email TEXT NOT NULL,
+            email_sent INTEGER DEFAULT 0,
+            alert_shown INTEGER DEFAULT 0,
+            FOREIGN KEY (user_email) REFERENCES users (email)
+        )
+    """)
+    
+    try:
+        conn.execute("ALTER TABLE assignments ADD COLUMN status TEXT DEFAULT 'to_do'")
+    except:
+        pass  # prevents error if column already exists
+    
+    conn.commit()
+    conn.close()
+
+init_db()
+
+@app.route("/")
+def home():
+    return render_template("landingpage.html")
+
+def send_email(to_email, subject, body):
+    sender = "assignmate4u@gmail.com"
+    password = "mdom ybrf nwcf hcic"
+
+    msg = MIMEText(body)
+    msg["Subject"] = subject
+    msg["From"] = sender
+    msg["To"] = to_email
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+        smtp.login(sender, password)
+        smtp.send_message(msg)
+
+def check_deadlines(): 
+
+    conn = get_db()
+
+    assignments = conn.execute(
+        "SELECT * FROM assignments WHERE email_sent = 0"
+    ).fetchall()
+
+    today = datetime.today().date()
+
+    for a in assignments:
+        deadline_date = datetime.strptime(a["deadline"], "%Y-%m-%d").date()
+
+        if deadline_date == today + timedelta(days=1):
+            send_email(
+                a["user_email"],
+                "Assignment Reminder",
+                f"Your assignment '{a['title']}' is due tomorrow."
+            )
+
+            conn.execute(
+                "UPDATE assignments SET email_sent = 1 WHERE id = ?",
+                (a["id"],)
+            )
+
+def init_color_db():
+    conn = get_db()
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS subject_colors (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_email TEXT,
+            subject TEXT,
+            color_code TEXT,
+            UNIQUE(user_email, subject)
+        )
+    ''')
+
     conn.commit()
     conn.close()
 
@@ -294,8 +390,19 @@ def analytics():
 
 @app.route('/subject/<code>')
 def subject(code):
-    short_code = code.split(" - ")[0].strip()
-    assignments = assignments_data.get(short_code, [])
+    user_email = session.get('user')
+    if not user_email:
+        return redirect(url_for('login'))
+
+    # Ambil data assignment dari database berdasarkan email user DAN subjek yang dipilih
+    conn = get_db()
+    assignments = conn.execute(
+        "SELECT * FROM assignments WHERE user_email = ? AND subject = ?", 
+        (user_email, code)
+    ).fetchall()
+    conn.close()
+
+    # Hantar data 'assignments' dari database ke template subject.html
     return render_template('subject.html', code=code, assignments=assignments)
 
 
@@ -472,6 +579,13 @@ def delete_file(filename):
             assignment["attachment"].remove(filename)
 
     return redirect(request.referrer or url_for('dashboard'))
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(
+        app.config['UPLOAD_FOLDER'],
+        filename
+    )
 
 
 if __name__ == '__main__':

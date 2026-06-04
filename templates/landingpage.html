@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Landing Page</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='landingpage.css') }}">
+    <link href="https://googleapis.com" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Navbar -->
+    <header>
+        <nav class="navbar">
+            <h1 class="logo">AssignMate</h1>
+            <ul class="nav-links">
+                <li><a href="#">Home</a></li>
+                <li><a href="#">Features</a></li>
+                <li><a href="#">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h2>Plan, Track, Complete with Ease</h2>
+            <p>One place to organise all your tasks.</p>
+            <a href="{{ url_for('login') }}" class="btn">Get Started</a>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="feature-box">
+            <h3>Smart</h3>
+            <p>Quick and responsive design.</p>
+        </div>
+        <div class="feature-box">
+            <h3>Simple</h3>
+            <p>Clean and minimal look.</p>
+        </div>
+        <div class="feature-box">
+            <h3>Organised</h3>
+            <p>Track everything in one place.</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>© 2026 AssignMate. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>

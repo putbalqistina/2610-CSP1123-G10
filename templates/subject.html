@@ -54,15 +54,14 @@
 
     <!-- Cards -->
     <div class="cards">
-        {% for assignment in assignments %}
-        <a href="{{ url_for('assignment', title=assignment) }}">
+    {% for assignment in assignments %}
+        <a href="{{ url_for('assignment', title=assignment['title']) }}">
             <div class="card">
-                {{ assignment }}
+                {{ assignment['title'] }}
             </div>
         </a>
     {% endfor %}
-
-    </div>
+</div>
 
 </div>
 
