@@ -60,8 +60,8 @@ def init_db():
 init_db()
 
 def send_email(to_email, subject, body):
-    sender = "yourgmail@gmail.com"
-    password = "your_app_password"
+    sender = "assignmate4u@gmail.com"
+    password = "mdom ybrf nwcf hcic"
 
     msg = MIMEText(body)
     msg["Subject"] = subject
@@ -73,10 +73,11 @@ def send_email(to_email, subject, body):
         smtp.send_message(msg)
 
 def check_deadlines():
+
     conn = get_db()
 
     assignments = conn.execute(
-        "SELECT * FROM assignments"
+        "SELECT * FROM assignments WHERE email_sent = 0"
     ).fetchall()
 
     today = datetime.today().date()
