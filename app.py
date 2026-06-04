@@ -462,13 +462,17 @@ def calendar_view():
 
 @app.route('/delete/<filename>')
 def delete_file(filename):
-    path = os.path.join(
-        app.config['UPLOAD_FOLDER'],
-        filename
-    )
+
+    print('Deleting', filename)
+
+    path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+    print("Path:", path)
+    print("Exists:", os.path.exists(path))
 
     if os.path.exists(path):
         os.remove(path)
+        print("Deleted")
 
     for assignment in assignment_store.values():
         if filename in assignment["attachment"]:
