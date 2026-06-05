@@ -54,9 +54,6 @@ def init_color_db():
     conn.commit()
     conn.close()
 
-# Panggil fungsi ini semasa startup aplikasi Flask
-init_color_db()
-
 def init_user_db():
     conn = get_db()
     conn.execute('''
@@ -87,6 +84,12 @@ def init_assignment_db():
     ''')
     conn.commit()
     conn.close()
+
+
+# Panggil fungsi ini semasa startup aplikasi Flask
+init_color_db()
+init_user_db()
+init_assignment_db()
 
 
 # --- Data Stores ---
