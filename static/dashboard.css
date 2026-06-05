@@ -3,9 +3,9 @@ body {
     font-family: Arial, sans-serif;
     background: linear-gradient(
         135deg,
-        #fffbe6 0%,
-        #ffe082 50%,
-        #ffca28 100%
+        #fdfcfb 0%,
+        #f5f0e1 50%,
+        #e8d9c9 100%
     );
 }
 
@@ -13,6 +13,14 @@ body {
     font-size : 30px;
     font-weight :700;
     color : #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.brand-logo {
+    width: auto;
+    height: 40px;
 }
 
 
@@ -237,7 +245,7 @@ textarea {
     width: 80%;
     max-width: 600px;
 
-    transform: translateY(-5px) scale(1.00)0;
+    transform: translateY(-5px) scale(1.00);
     box-shadow: 0 15px 30px rgba(0,0,0,0.3);
 }
 
