@@ -57,6 +57,38 @@ def init_color_db():
 # Panggil fungsi ini semasa startup aplikasi Flask
 init_color_db()
 
+def init_user_db():
+    conn = get_db()
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            email TEXT UNIQUE,
+            password TEXT,
+            full_name TEXT,
+            bio TEXT,
+            gender TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+def init_assignment_db():
+    conn = get_db()
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS assignments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            subject TEXT,
+            title TEXT,
+            deadline TEXT,
+            user_email TEXT,
+            status TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+
 # --- Data Stores ---
 
 subjects = [
