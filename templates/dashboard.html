@@ -61,7 +61,7 @@
         {% if upcoming %}
         <div class="alert-box" id="reminder-box">
             <span class="close-btn" onclick="closeReminder()">&times;</span>
-            <h3>⚠️ Upcoming Deadlines (Next 3 Days)</h3>
+            <h3>⚠️ Upcoming Deadlines</h3>
             {% for item in upcoming %}
                 <p><strong>{{ item.title }}</strong> is due on {{ item.deadline }} ({{ item.subject }})</p>
             {% endfor %}
