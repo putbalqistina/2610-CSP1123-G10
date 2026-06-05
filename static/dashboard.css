@@ -3,9 +3,9 @@ body {
     font-family: Arial, sans-serif;
     background: linear-gradient(
         135deg,
-        #fffbef 0%,
-        #fff8e8 50%,
-        #fff3d6 100%
+        #fffbe6 0%,
+        #ffe082 50%,
+        #ffca28 100%
     );
 }
 
@@ -233,7 +233,9 @@ textarea {
     border: 1px solid #ffe69c;
     padding: 15px;
     border-radius: 10px;
-    margin-bottom: 20px;
+    margin: 20px auto;
+    width: 80%;
+    max-width: 600px;
 
     transform: translateY(-5px) scale(1.00)0;
     box-shadow: 0 15px 30px rgba(0,0,0,0.3);
