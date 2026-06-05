@@ -27,24 +27,6 @@
             
             <div style="display: flex; align-items: center; gap: 15px;">
                 
-                <div class="nav-item dropdown">
-                    <button class="topbar-btn"><i class="fa-solid fa-filter"></i>Filter
-                    </button>
-                    <div class="dropdown-content">
-                        <form action="/dashboard" method="GET">
-                            <div class="filter-group">
-                                <label for="subject_filter">Subject</label>
-                                <select name="subject_filter" id="subject_filter">
-                                    <option value="All" {% if request.args.get('subject_filter') == 'All' or not request.args.get('subject_filter') %}selected{% endif %}>All Subjects</option>
-                                    {% for subject in subjects %}
-                                        <option value="{{ subject }}" {% if request.args.get('subject_filter') == subject %}selected{% endif %}>{{ subject }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <button type="submit" class="apply-btn">Apply Filter</button>
-                        </form>
-                    </div>
-                </div>
 
                 <div class="settings-link">
                     <a href="/editprofile"  class="topbar-btn">
