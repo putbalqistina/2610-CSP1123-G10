@@ -3,9 +3,9 @@ body {
     font-family: Arial, sans-serif;
     background: linear-gradient(
         135deg,
-        #fdfcfb 0%,
-        #f5f0e1 50%,
-        #e8d9c9 100%
+        #fff9db 0%,
+        #fffdf5 50%,
+        #ffffff 100%
     );
 }
 
@@ -97,13 +97,17 @@ h1 {
     padding: 30px;
     border-radius: 12px;
     cursor: pointer;
-    transition: 0.3s;
+    transition: all 0.3s ease;
     min-height: 120px;
+    /* Bayang yang lebih lembut dan nampak moden */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
 }
 
 .card:hover {
-    background: #e5e7eb;
-    transform: translateY(-3px);
+    background: #ffffff;
+    /* Apabila di-hover, kad naik atas sikit dan bayang jadi tebal */
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 textarea {
