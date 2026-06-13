@@ -89,7 +89,21 @@
             </div>
         </div>
 
-        <h1>{% if user and user.username %}{{ user.username }}'s{% else %}Your{% endif %} Dashboard</h1>
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+    <!-- Memeriksa jika user mempunyai gambar profile, jika tiada guna gambar placeholder default -->
+    {% if user and user.profile_pic %}
+        <img src="{{ url_for('uploaded_file', filename=user.profile_pic) }}" 
+             alt="Profile Picture" 
+             style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #ccc;">
+    {% else %}
+        <!-- Gambar default jika user belum upload apa-apa -->
+        <img src="https://ui-avatars.com/api/?name={{ user.username if user else 'User' }}&background=random"
+             alt="Default Profile" 
+             style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #ccc;">
+    {% endif %}
+    
+    <h2 style="margin: 0; font-weight: bold;">{{ user.username }}'s Dashboard</h2>
+</div>
 
         <div class="cards-container">
             <div class="cards">
@@ -112,6 +126,7 @@
         </div>
 
     </div>
+
 
     <script src="{{ url_for('static', filename='pomodoro.js') }}"></script>
 </body>

@@ -308,7 +308,7 @@ def dashboard():
             pass
 
     conn.close()
-    return render_template('dashboard.html', subjects=user_subjects, assignments=assignments, upcoming=upcoming)
+    return render_template('dashboard.html', subjects=user_subjects, assignments=assignments, upcoming=upcoming, user=user_data)
 
 
 @app.route('/editprofile', methods=['GET', 'POST'])
@@ -324,12 +324,34 @@ def editprofile():
         username = request.form.get('username')
         bio = request.form.get('bio')
         gender = request.form.get('gender')
+        
+        # 1. Ambil fail gambar dari form
+        file = request.files.get('profile_pic')
+        filename = None
 
-        conn.execute('''
-            UPDATE users 
-            SET full_name = ?, username = ?, bio = ?, gender = ? 
-            WHERE email = ? OR username = ?
-        ''', (full_name, username, bio, gender, user_identifier, user_identifier))
+        # 2. Semak jika fail wujud dan dibenarkan
+        if file and file.filename != '' and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            unique_filename = str(uuid.uuid4()) + "_" + filename
+            path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+            file.save(path) # Simpan gambar ke static/uploads
+            filename = unique_filename
+
+        # 3. Kemas kini pangkalan data
+        if filename:
+            # Jika user muat naik gambar baru, kemas kini sekali kolum profile_pic
+            conn.execute('''
+                UPDATE users 
+                SET full_name = ?, username = ?, bio = ?, gender = ?, profile_pic = ?
+                WHERE email = ? OR username = ?
+            ''', (full_name, username, bio, gender, filename, user_identifier, user_identifier))
+        else:
+            # Jika user tak muat naik gambar baru, kekalkan gambar lama
+            conn.execute('''
+                UPDATE users 
+                SET full_name = ?, username = ?, bio = ?, gender = ?
+                WHERE email = ? OR username = ?
+            ''', (full_name, username, bio, gender, user_identifier, user_identifier))
         
         conn.commit()
         conn.close()
