@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Dashboard - AssignMate</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 <body>
 
@@ -12,7 +13,10 @@
     <div class="dashboard">
 
         <div class="topbar">
-            <div class="brand">AssignMate</div>
+            <div class="brand">
+                <img src="{{ url_for('static', filename='images/Assignmate 2.png') }}" alt="Logo" class="brand-logo">
+                <span>AssignMate</span>
+            </div>
             
             <div class="search-bar">
                 <input type="text" placeholder="Search 🔍︎">
@@ -21,7 +25,8 @@
             <div style="display: flex; align-items: center; gap: 15px;">
                 
                 <div class="nav-item dropdown">
-                    <span class="filter-btn">Notifications | Filter ▾</span>
+                    <button class="topbar-btn"><i class="fa-solid fa-filter"></i>Filter
+                    </button>
                     <div class="dropdown-content">
                         <form action="/dashboard" method="GET">
                             <div class="filter-group">
@@ -39,20 +44,25 @@
                 </div>
 
                 <div class="settings-link">
-                    <a href="/editprofile" style="text-decoration: none; cursor: pointer; font-size: 20px;" title="Edit Profile">⚙️</a>
+                    <a href="/editprofile"  class="topbar-btn">
+                        <i class="fa-solid fa-gear"></i>
+                    </a>    
                 </div>
                 
                 <div class="analytics-link">
-                    <a href="{{ url_for('analytics') }}" style="text-decoration: none; cursor: pointer;">
-                        📊 Analytics
+                    <a href="{{ url_for('analytics') }}" class="topbar-btn">
+                        <i class="fa-solid fa-chart-line"></i>
+                
                     </a>
                 </div>
 
-                <button id="openTimer" class="btn" title="Timer">⏱️</button>
+                <button id="openTimer" class="topbar-btn">
+                    <i class="fa-solid fa-stopwatch"></i>
+                </button>
 
                 <div class="calendar-link">
-                    <a href="{{ url_for('calendar_view') }}" title="View Calendar" style="text-decoration: none; cursor: pointer; font-size: 20px;">
-                       📅
+                    <a href="{{ url_for('calendar_view') }}" class="topbar-btn">
+                        <i class="fa-solid fa-calendar"></i>
                     </a>
                 </div>
             </div>
@@ -89,20 +99,34 @@
             </div>
         </div>
 
-        <h1>{% if user and user.username %}{{ user.username }}'s{% else %}Your{% endif %} Dashboard</h1>
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+    <!-- Memeriksa jika user mempunyai gambar profile, jika tiada guna gambar placeholder default -->
+    {% if user and user.profile_pic %}
+        <img src="{{ url_for('uploaded_file', filename=user.profile_pic) }}" 
+             alt="Profile Picture" 
+             style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #ccc;">
+    {% else %}
+        <!-- Gambar default jika user belum upload apa-apa -->
+        <img src="https://ui-avatars.com/api/?name={{ user.username if user else 'User' }}&background=random"
+             alt="Default Profile" 
+             style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #ccc;">
+    {% endif %}
+    
+    <h2 style="margin: 0; font-weight: bold;">{{ user.username }}'s Dashboard</h2>
+</div>
 
         <div class="cards-container">
             <div class="cards">
                 {% if assignments %}
-                    {% set dipaparkan = [] %}
+                    {% set displayed = [] %}
                     {% for item in assignments %}
-                        {% if item.subject not in dipaparkan %}
+                        {% if item.subject not in displayed %}
                             <a href="{{ url_for('subject', code=item.subject) }}" class="card-link">
                                 <div class="card">
                                     <span class="subject-tag">{{ item.subject }}</span>
                                 </div>
                             </a>
-                            {% if dipaparkan.append(item.subject) %}{% endif %}
+                            {% if displayed.append(item.subject) %}{% endif %}
                         {% endif %}
                     {% endfor %}
                 {% else %}
@@ -112,6 +136,7 @@
         </div>
 
     </div>
+
 
     <script src="{{ url_for('static', filename='pomodoro.js') }}"></script>
 </body>

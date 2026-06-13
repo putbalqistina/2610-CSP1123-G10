@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<html lang="ms">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,50 +11,55 @@
     <div class="editprofile-card">
         <h1>Edit Profile</h1>
         
-        <div class="avatar-wrapper">
-            <img src="https://ui-avatars.com/api/?name=User&background=random" alt="Profile" class="avatar" id="profile-pic">
-            <label for="upload-photo" class="edit-icon">
-                ✎
-                <input type="file" id="upload-photo" style="display:none" accept="image/*">
-            </label>
-        </div>
+        <form class="profile-form" action="{{ url_for('editprofile') }}" method="POST" enctype="multipart/form-data">
+            
+            <div class="avatar-wrapper">
+                {% if user and user.profile_pic %}
+                    <img src="{{ url_for('uploaded_file', filename=user.profile_pic) }}" alt="Profile" class="avatar" id="profile-pic">
+                {% else %}
+                    <img src="https://ui-avatars.com/api/?name={{ user.username if user else 'User' }}&background=random" alt="Profile" class="avatar" id="profile-pic">
+                {% endif %}
+                
+                <label for="upload-photo" class="edit-icon">
+                    ✎
+                    <input type="file" id="upload-photo" name="profile_pic" style="display:none" accept="image/*">
+                </label>
+            </div>
 
-        <div class="profile-info">
-            <h3 id="display-name">Name's AssignMate</h3>
-            <p>MMU STUDENT</p>
-        </div>
-
-       <form class="profile-form" action="/editprofile" method="POST">
-    
-    <div class="input-group">
-        <input type="text" name="full_name" placeholder="Name" id="input-name">
-    </div>
-
-    <div class="input-group">
-        <input type="text" name="username" placeholder="Username" id="username">
-    </div>
-
-    <div class="input-group">
-        <input type="text" name="bio" placeholder="Bio">
-    </div>
-
-    <label class="gender-label">Enter your gender:</label>
-    <div class="gender-group">
-        <input type="radio" name="gender" value="male" id="male">
-        <label for="male">Male</label>
+            <div class="profile-info">
+                <h3 id="display-name">{{ user.username if user else 'Name' }}'s AssignMate</h3>
+                <p>MMU STUDENT</p>
+            </div>
         
-        <input type="radio" name="gender" value="female" id="female">
-        <label for="female">Female</label>
-        
-        <input type="radio" name="gender" value="others" id="others">
-        <label for="others">Others</label>
-    </div>
+            <div class="input-group">
+                <input type="text" name="full_name" placeholder="Name" id="input-name" value="{{ user.full_name if user else '' }}">
+            </div>
 
-    <button type="submit" class="btn-edit">Save Changes</button>
-</form>
-    </div>
+            <div class="input-group">
+                <input type="text" name="username" placeholder="Username" id="username" value="{{ user.username if user else '' }}">
+            </div>
+
+            <div class="input-group">
+                <input type="text" name="bio" placeholder="Bio" value="{{ user.bio if user else '' }}">
+            </div>
+
+            <label class="gender-label">Enter your gender:</label>
+            <div class="gender-group">
+                <input type="radio" name="gender" value="male" id="male" {% if user and user.gender == 'male' %}checked{% endif %}>
+                <label for="male">Male</label>
+                
+                <input type="radio" name="gender" value="female" id="female" {% if user and user.gender == 'female' %}checked{% endif %}>
+                <label for="female">Female</label>
+                
+                <input type="radio" name="gender" value="others" id="others" {% if user and user.gender == 'others' %}checked{% endif %}>
+                <label for="others">Others</label>
+            </div>
+
+            <button type="submit" class="btn-edit">Save Changes</button>
+        </form> </div>
+
     <script>
-        // 1. LOGIK UNTUK TUKAR NAMA DI HEADER
+        // 1. LOGIK UNTUK TUKAR NAMA DI HEADER secara "Real-time"
         const inputName = document.getElementById('username');
         const displayName = document.getElementById('display-name');
 
@@ -67,7 +73,7 @@
             });
         }
 
-        // 2. LOGIK UNTUK PREVIEW GAMBAR (Di luar fungsi inputName)
+        // 2. LOGIK UNTUK PREVIEW GAMBAR SEBELUM SUBMIT
         const uploadPhoto = document.getElementById('upload-photo');
         const profilePic = document.getElementById('profile-pic');
 

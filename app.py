@@ -35,28 +35,35 @@ def load_mmu_subjects():
             return json.load(f)
     except FileNotFoundError:
         return {}
+    
+def log_activity(title, activity):
+
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+    conn = get_db()
+
+    conn.execute("""
+        INSERT INTO activity_logs
+        (assignment_title, activity, timestamp)
+        VALUES (?, ?, ?)
+    """, (
+        title,
+        activity,
+        timestamp
+    ))
+
+    conn.commit()
+    conn.close()
 
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'docx', 'xlsx', 'zip'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS 
 
-def init_color_db():
+def init_all_tables():
     conn = get_db()
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS subject_colors (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_email TEXT,
-            subject TEXT,
-            color_code TEXT,
-            UNIQUE(user_email, subject)
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
-def init_db():
-    conn = get_db()
-
+    
+    # 1. Jadual Users
     conn.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,6 +77,7 @@ def init_db():
         )
     """)
 
+    # 2. Jadual Assignments (Lengkap dengan semua kolum)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS assignments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -77,24 +85,54 @@ def init_db():
             title TEXT NOT NULL,
             deadline TEXT NOT NULL,
             user_email TEXT NOT NULL,
+            status TEXT DEFAULT 'to_do',
+            is_shared INTEGER DEFAULT 0,
+            creator_email TEXT,
             email_sent INTEGER DEFAULT 0,
             alert_shown INTEGER DEFAULT 0,
             FOREIGN KEY (user_email) REFERENCES users (email)
         )
     """)
+
     try:
         conn.execute("ALTER TABLE assignments ADD COLUMN status TEXT DEFAULT 'to_do'")
     except:
         pass  # prevents error if column already exists
 
+
+    
+    # 3. Jadual Assignment Members
     conn.execute("""
-    CREATE TABLE IF NOT EXISTS assignment_invitations (
+        CREATE TABLE IF NOT EXISTS assignment_members (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            assignment_id INTEGER NOT NULL,
-            inviter_email TEXT NOT NULL,
-            invitee_email TEXT NOT NULL,
-            status TEXT DEFAULT 'pending'
-            )
+            assignment_id INTEGER,
+            member_email TEXT,
+            FOREIGN KEY (assignment_id) REFERENCES assignments(id),
+            FOREIGN KEY (member_email) REFERENCES users(email),
+            UNIQUE(assignment_id, member_email)
+        )
+    """)
+
+    # 4. Jadual Subject Colors
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS subject_colors (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_email TEXT,
+            subject TEXT,
+            color_code TEXT,
+            UNIQUE(user_email, subject)
+        )
+    """)
+
+    # 5. Jadual Messages (Chat)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            assignment_id INTEGER,
+            sender_name TEXT,
+            message TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
     """)
     
     conn.execute("""
@@ -104,10 +142,23 @@ def init_db():
             member_email TEXT NOT NULL
         );
     """)
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS activity_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            assignment_title TEXT,
+            activity TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
     conn.commit()
     conn.close()
 
-init_db()
+# Jalankan fungsi ini untuk setup database semasa Flask bermula
+init_all_tables()
+
+
+
 
 @app.route("/")
 def home():
@@ -151,23 +202,6 @@ def check_deadlines():
                 (a["id"],)
             )
 
-def init_color_db():
-    conn = get_db()
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS subject_colors (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_email TEXT,
-            subject TEXT,
-            color_code TEXT,
-            UNIQUE(user_email, subject)
-        )
-    ''')
-
-    conn.commit()
-    conn.close()
-
-# Panggil fungsi ini semasa startup aplikasi Flask
-init_color_db()
 
 # --- Data Stores ---
 
@@ -260,6 +294,7 @@ def add_assignment():
         return redirect(url_for("login"))
     
     mmu_data = load_mmu_subjects() 
+    error_msg = None
 
     if request.method == 'POST':
         conn = sqlite3.connect('database.db')
@@ -267,19 +302,64 @@ def add_assignment():
         subject = request.form.get('subject')
         title = request.form.get('title')
         deadline = request.form.get('deadline')
+        assignment_type = request.form.get('assignment_type') # 'personal' atau 'shared'
+        friend_input = request.form.get('friend_input', '').strip() # Ambil e-mel/username kawan
+
+        is_shared = 1 if assignment_type == 'shared' else 0
         
         conn = get_db()
-        conn.execute(
-            "INSERT INTO assignments (subject, title, deadline, user_email, status) VALUES (?, ?, ?, ?, 'to_do')",
-            (subject, title, deadline, user_email)
+        cursor = conn.cursor()
+
+        # JIKA PILIH SHARED: Semak dahulu jika akaun kawan wujud di dalam sistem
+        invited_email = None
+        if is_shared == 1 and friend_input:
+            user_found = conn.execute(
+                "SELECT email FROM users WHERE LOWER(email) = LOWER(?) OR LOWER(username) = LOWER(?)", 
+                (friend_input, friend_input)
+            ).fetchone()
+            
+            if not user_found:
+                error_msg = f"Error: User '{friend_input}' not registered in the system!"
+                conn.close()
+                return render_template("add_assignment.html", mmu_data=mmu_data, error_msg=error_msg)
+            else:
+                invited_email = user_found["email"]
+
+        # 1. Masukkan data tugasan baru ke table assignments
+        cursor.execute(
+            """INSERT INTO assignments 
+               (subject, title, deadline, user_email, status, is_shared, creator_email) 
+               VALUES (?, ?, ?, ?, 'to_do', ?, ?)""",
+            (subject, title, deadline, user_email, is_shared, user_email)
         )
+
         
+        assignment_id = cursor.lastrowid
+        
+        # 2. Jika jenis berkumpulan, daftarkan pencipta & kawan ke table assignment_members
+        if is_shared == 1:
+            # Masukkan pencipta tugasan (anda)
+            cursor.execute(
+                "INSERT INTO assignment_members (assignment_id, member_email) VALUES (?, ?)",
+                (assignment_id, user_email)
+            )
+            # Masukkan kawan yang dijemput (jika ada input dimasukkan)
+            if invited_email:
+                try:
+                    cursor.execute(
+                        "INSERT INTO assignment_members (assignment_id, member_email) VALUES (?, ?)",
+                        (assignment_id, invited_email)
+                    )
+                except sqlite3.IntegrityError:
+                    pass # Abaikan ralat jika ter-input email sendiri
+            
+
         conn.commit()
         conn.close()
         
         return redirect(url_for("dashboard"))
 
-    return render_template("add_assignment.html", mmu_data=mmu_data)
+    return render_template("add_assignment.html", mmu_data=mmu_data, error_msg=error_msg)
 
 
 @app.route('/dashboard')
@@ -289,31 +369,34 @@ def dashboard():
         return redirect(url_for('login'))
 
     conn = get_db()
-    
-    # 1. Ambil data user dari database (Ini sudah betul)
     user_data = conn.execute(
         "SELECT * FROM users WHERE email = ? OR username = ?", 
         (user_email, user_email)
     ).fetchone()
     
     selected_filter = request.args.get('subject_filter', 'All')
-
-    subject_rows = conn.execute(
-        "SELECT DISTINCT subject FROM assignments WHERE user_email = ?", 
-        (user_email,)
-    ).fetchall()
+    
+    # 1. KEMASKINI: Ambil senarai subjek tersendiri daripada tugasan milik sendiri ATAU tugasan kumpulan
+    subject_rows = conn.execute("""
+        SELECT DISTINCT subject FROM assignments 
+        WHERE user_email = ? 
+        OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?)
+    """, (user_email, user_email)).fetchall()
     user_subjects = [row['subject'] for row in subject_rows]
 
+    # 2. KEMASKINI: Ambil data assignments (Milik sendiri + Tugasan kumpulan)
     if selected_filter == 'All' or selected_filter == '':
-        assignments = conn.execute(
-            "SELECT * FROM assignments WHERE user_email = ?", 
-            (user_email,)
-        ).fetchall()
+        assignments = conn.execute("""
+            SELECT * FROM assignments 
+            WHERE user_email = ? 
+            OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?)
+        """, (user_email, user_email)).fetchall()
     else:
-        assignments = conn.execute(
-            "SELECT * FROM assignments WHERE user_email = ? AND subject = ?", 
-            (user_email, selected_filter)
-        ).fetchall()
+        assignments = conn.execute("""
+            SELECT * FROM assignments 
+            WHERE (user_email = ? OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?))
+            AND subject = ?
+        """, (user_email, user_email, selected_filter)).fetchall()
     
     today = datetime.today().date()
     upcoming = []
@@ -328,10 +411,7 @@ def dashboard():
             pass
 
     conn.close()
-    
-    # PERUBAHAN DI SINI: Tambah 'user=user_data' di hujung sekali supaya HTML boleh guna maklumat user
     return render_template('dashboard.html', subjects=user_subjects, assignments=assignments, upcoming=upcoming, user=user_data)
-
 
 @app.route('/editprofile', methods=['GET', 'POST'])
 def editprofile():
@@ -346,12 +426,34 @@ def editprofile():
         username = request.form.get('username')
         bio = request.form.get('bio')
         gender = request.form.get('gender')
+        
+        # 1. Ambil fail gambar dari form
+        file = request.files.get('profile_pic')
+        filename = None
 
-        conn.execute('''
-            UPDATE users 
-            SET full_name = ?, username = ?, bio = ?, gender = ? 
-            WHERE email = ? OR username = ?
-        ''', (full_name, username, bio, gender, user_identifier, user_identifier))
+        # 2. Semak jika fail wujud dan dibenarkan
+        if file and file.filename != '' and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            unique_filename = str(uuid.uuid4()) + "_" + filename
+            path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+            file.save(path) # Simpan gambar ke static/uploads
+            filename = unique_filename
+
+        # 3. Kemas kini pangkalan data
+        if filename:
+            # Jika user muat naik gambar baru, kemas kini sekali kolum profile_pic
+            conn.execute('''
+                UPDATE users 
+                SET full_name = ?, username = ?, bio = ?, gender = ?, profile_pic = ?
+                WHERE email = ? OR username = ?
+            ''', (full_name, username, bio, gender, filename, user_identifier, user_identifier))
+        else:
+            # Jika user tak muat naik gambar baru, kekalkan gambar lama
+            conn.execute('''
+                UPDATE users 
+                SET full_name = ?, username = ?, bio = ?, gender = ?
+                WHERE email = ? OR username = ?
+            ''', (full_name, username, bio, gender, user_identifier, user_identifier))
         
         conn.commit()
         conn.close()
@@ -416,20 +518,28 @@ def subject(code):
     if not user_email:
         return redirect(url_for('login'))
 
- 
+
     conn = get_db()
-    assignments = conn.execute(
-        "SELECT * FROM assignments WHERE user_email = ? AND subject = ?", 
-        (user_email, code)
-    ).fetchall()
+    assignments = conn.execute("""
+        SELECT * FROM assignments 
+        WHERE subject = ? 
+        AND (
+            user_email = ? 
+            OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?)
+        )
+    """, (code, user_email, user_email)).fetchall()
+    
     conn.close()
 
 
     return render_template('subject.html', code=code, assignments=assignments)
 
-
 @app.route('/assignment/<title>', methods=["GET", "POST"])
 def assignment(title):
+    user_email = session.get("user")
+    if not user_email:
+        return redirect(url_for("login"))
+    
     if title not in assignment_store:
         assignment_store[title] = {
             "description": "",
@@ -441,12 +551,23 @@ def assignment(title):
 
     if request.method == "POST":
         new_desc = request.form.get("description")
+
         if new_desc:
             data["description"] = new_desc
 
+            log_activity(
+                title,
+                f"{session['user']} updated the description."
+            )
         new_comment = request.form.get("comment")
+
         if new_comment:
             data["comments"].append(new_comment)
+
+            log_activity(
+                title,
+                f"{session['user']} added a comment."
+            )
 
         file = request.files.get("file")
 
@@ -462,7 +583,16 @@ def assignment(title):
             file.save(path)
             data["attachment"].append(unique_filename)
 
+            log_activity(
+                title,
+                f"{session['user']} uploaded '{filename}'."
+            )
+
         status = request.form.get("status")
+        log_activity(
+            title,
+            f"{session['user']} changed the status to '{status}'."
+        )
         conn = get_db()
         conn.execute("""
             UPDATE assignments 
@@ -476,6 +606,13 @@ def assignment(title):
     
     conn = get_db()
     assignment_row = conn.execute("SELECT status FROM assignments WHERE title = ?", (title,)).fetchone()
+    logs = conn.execute("""
+    SELECT *
+    FROM activity_logs
+    WHERE assignment_title = ?
+    ORDER BY timestamp DESC
+""", (title,)).fetchall()
+    
     conn.close()
 
     status = assignment_row["status"] if assignment_row else "to_do"
@@ -486,7 +623,8 @@ def assignment(title):
         description=data["description"],
         comments=data["comments"],
         attachment=data["attachment"],
-        status=status
+        status=status,
+        logs=logs
     )
 
 
@@ -588,13 +726,17 @@ def calendar_view():
 
 @app.route('/delete/<filename>')
 def delete_file(filename):
-    path = os.path.join(
-        app.config['UPLOAD_FOLDER'],
-        filename
-    )
+
+    print('Deleting', filename)
+
+    path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+    print("Path:", path)
+    print("Exists:", os.path.exists(path))
 
     if os.path.exists(path):
         os.remove(path)
+        print("Deleted")
 
     for assignment in assignment_store.values():
         if filename in assignment["attachment"]:
@@ -608,6 +750,51 @@ def uploaded_file(filename):
         app.config['UPLOAD_FOLDER'],
         filename
     )
+
+# Route untuk chat
+
+@app.route('/')
+def chat():
+
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT sender_name,
+               message,
+               created_at
+        FROM messages
+        ORDER BY created_at
+    """)
+
+    messages = cursor.fetchall()
+
+    conn.close()
+
+    return render_template(
+        'chat.html',
+        messages=messages
+    )
+
+@app.route('/send', methods=['POST'])
+def send_message():
+
+    sender_name = request.form['sender_name']
+    message = request.form['message']
+
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO messages
+        (assignment_id, sender_name, message)
+        VALUES (?, ?, ?)
+    """, (1, sender_name, message))
+
+    conn.commit()
+    conn.close()
+
+    return redirect('/')
 
 
 if __name__ == '__main__':
