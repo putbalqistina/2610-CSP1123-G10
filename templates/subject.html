@@ -65,10 +65,6 @@
         <a href="{{ url_for('assignment', title=assignment['title']) }}">
             <div class="card">
                 {{ assignment['title'] }}
-        {% for assignment in assignments %}
-        <a href="{{ url_for('assignment', title=assignment['title']) }}">
-            <div class="card">
-                {{ assignment['title']}}
             </div>
         </a>
     {% endfor %}

@@ -40,23 +40,10 @@ def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'docx', 'xlsx', 'zip'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS 
 
-def init_color_db():
+def init_all_tables():
     conn = get_db()
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS subject_colors (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_email TEXT,
-            subject TEXT,
-            color_code TEXT,
-            UNIQUE(user_email, subject)
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
-def init_db():
-    conn = get_db()
-
+    
+    # 1. Jadual Users
     conn.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,6 +57,7 @@ def init_db():
         )
     """)
 
+    # 2. Jadual Assignments (Lengkap dengan semua kolum)
     conn.execute("""
         CREATE TABLE IF NOT EXISTS assignments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -77,21 +65,57 @@ def init_db():
             title TEXT NOT NULL,
             deadline TEXT NOT NULL,
             user_email TEXT NOT NULL,
+            status TEXT DEFAULT 'to_do',
+            is_shared INTEGER DEFAULT 0,
+            creator_email TEXT,
             email_sent INTEGER DEFAULT 0,
             alert_shown INTEGER DEFAULT 0,
             FOREIGN KEY (user_email) REFERENCES users (email)
         )
     """)
     
-    try:
-        conn.execute("ALTER TABLE assignments ADD COLUMN status TEXT DEFAULT 'to_do'")
-    except:
-        pass  # prevents error if column already exists
+    # 3. Jadual Assignment Members
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS assignment_members (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            assignment_id INTEGER,
+            member_email TEXT,
+            FOREIGN KEY (assignment_id) REFERENCES assignments(id),
+            FOREIGN KEY (member_email) REFERENCES users(email),
+            UNIQUE(assignment_id, member_email)
+        )
+    """)
+
+    # 4. Jadual Subject Colors
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS subject_colors (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_email TEXT,
+            subject TEXT,
+            color_code TEXT,
+            UNIQUE(user_email, subject)
+        )
+    """)
+
+    # 5. Jadual Messages (Chat)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            assignment_id INTEGER,
+            sender_name TEXT,
+            message TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     
     conn.commit()
     conn.close()
 
-init_db()
+# Jalankan fungsi ini untuk setup database semasa Flask bermula
+init_all_tables()
+
+
+
 
 @app.route("/")
 def home():
@@ -134,72 +158,6 @@ def check_deadlines():
                 "UPDATE assignments SET email_sent = 1 WHERE id = ?",
                 (a["id"],)
             )
-
-def init_color_db():
-    conn = get_db()
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS subject_colors (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_email TEXT,
-            subject TEXT,
-            color_code TEXT,
-            UNIQUE(user_email, subject)
-        )
-    ''')
-
-def init_user_db():
-    conn = get_db()
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE,
-            email TEXT UNIQUE,
-            password TEXT,
-            full_name TEXT,
-            bio TEXT,
-            gender TEXT
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
-def init_assignment_db():
-    conn = get_db()
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS assignments (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            subject TEXT,
-            title TEXT,
-            deadline TEXT,
-            user_email TEXT,
-            status TEXT
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
-def init_db():
-    conn = sqlite3.connect('database.db')
-    cursor = conn.cursor()
-
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS messages (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        assignment_id INTEGER,
-        sender_name TEXT,
-        message TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
-
-    conn.commit()
-    conn.close()
-
-# Panggil fungsi ini semasa startup aplikasi Flask
-init_color_db()
-init_user_db()
-init_assignment_db()
-init_db()
 
 
 # --- Data Stores ---
@@ -293,23 +251,67 @@ def add_assignment():
         return redirect(url_for("login"))
     
     mmu_data = load_mmu_subjects() 
+    error_msg = None
 
     if request.method == 'POST':
         subject = request.form.get('subject')
         title = request.form.get('title')
         deadline = request.form.get('deadline')
+        assignment_type = request.form.get('assignment_type') # 'personal' atau 'shared'
+        friend_input = request.form.get('friend_input', '').strip() # Ambil e-mel/username kawan
+
+        is_shared = 1 if assignment_type == 'shared' else 0
         
         conn = get_db()
-        conn.execute(
-            "INSERT INTO assignments (subject, title, deadline, user_email, status) VALUES (?, ?, ?, ?, 'to_do')",
-            (subject, title, deadline, user_email)
+        cursor = conn.cursor()
+
+        # JIKA PILIH SHARED: Semak dahulu jika akaun kawan wujud di dalam sistem
+        invited_email = None
+        if is_shared == 1 and friend_input:
+            user_found = conn.execute(
+                "SELECT email FROM users WHERE LOWER(email) = LOWER(?) OR LOWER(username) = LOWER(?)", 
+                (friend_input, friend_input)
+            ).fetchone()
+            
+            if not user_found:
+                error_msg = f"Error: User '{friend_input}' not registered in the system!"
+                conn.close()
+                return render_template("add_assignment.html", mmu_data=mmu_data, error_msg=error_msg)
+            else:
+                invited_email = user_found["email"]
+
+        # 1. Masukkan data tugasan baru ke table assignments
+        cursor.execute(
+            """INSERT INTO assignments 
+               (subject, title, deadline, user_email, status, is_shared, creator_email) 
+               VALUES (?, ?, ?, ?, 'to_do', ?, ?)""",
+            (subject, title, deadline, user_email, is_shared, user_email)
         )
+        assignment_id = cursor.lastrowid
+        
+        # 2. Jika jenis berkumpulan, daftarkan pencipta & kawan ke table assignment_members
+        if is_shared == 1:
+            # Masukkan pencipta tugasan (anda)
+            cursor.execute(
+                "INSERT INTO assignment_members (assignment_id, member_email) VALUES (?, ?)",
+                (assignment_id, user_email)
+            )
+            # Masukkan kawan yang dijemput (jika ada input dimasukkan)
+            if invited_email:
+                try:
+                    cursor.execute(
+                        "INSERT INTO assignment_members (assignment_id, member_email) VALUES (?, ?)",
+                        (assignment_id, invited_email)
+                    )
+                except sqlite3.IntegrityError:
+                    pass # Abaikan ralat jika ter-input email sendiri
+            
         conn.commit()
         conn.close()
         
         return redirect(url_for("dashboard"))
 
-    return render_template("add_assignment.html", mmu_data=mmu_data)
+    return render_template("add_assignment.html", mmu_data=mmu_data, error_msg=error_msg)
 
 
 @app.route('/dashboard')
@@ -326,23 +328,27 @@ def dashboard():
     
     selected_filter = request.args.get('subject_filter', 'All')
     
-
-    subject_rows = conn.execute(
-        "SELECT DISTINCT subject FROM assignments WHERE user_email = ?", 
-        (user_email,)
-    ).fetchall()
+    # 1. KEMASKINI: Ambil senarai subjek tersendiri daripada tugasan milik sendiri ATAU tugasan kumpulan
+    subject_rows = conn.execute("""
+        SELECT DISTINCT subject FROM assignments 
+        WHERE user_email = ? 
+        OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?)
+    """, (user_email, user_email)).fetchall()
     user_subjects = [row['subject'] for row in subject_rows]
 
+    # 2. KEMASKINI: Ambil data assignments (Milik sendiri + Tugasan kumpulan)
     if selected_filter == 'All' or selected_filter == '':
-        assignments = conn.execute(
-            "SELECT * FROM assignments WHERE user_email = ?", 
-            (user_email,)
-        ).fetchall()
+        assignments = conn.execute("""
+            SELECT * FROM assignments 
+            WHERE user_email = ? 
+            OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?)
+        """, (user_email, user_email)).fetchall()
     else:
-        assignments = conn.execute(
-            "SELECT * FROM assignments WHERE user_email = ? AND subject = ?", 
-            (user_email, selected_filter)
-        ).fetchall()
+        assignments = conn.execute("""
+            SELECT * FROM assignments 
+            WHERE (user_email = ? OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?))
+            AND subject = ?
+        """, (user_email, user_email, selected_filter)).fetchall()
     
     today = datetime.today().date()
     upcoming = []
@@ -358,7 +364,6 @@ def dashboard():
 
     conn.close()
     return render_template('dashboard.html', subjects=user_subjects, assignments=assignments, upcoming=upcoming, user=user_data)
-
 
 @app.route('/editprofile', methods=['GET', 'POST'])
 def editprofile():
@@ -465,17 +470,20 @@ def subject(code):
     if not user_email:
         return redirect(url_for('login'))
 
-    # Ambil data assignment dari database berdasarkan email user DAN subjek yang dipilih
     conn = get_db()
-    assignments = conn.execute(
-        "SELECT * FROM assignments WHERE user_email = ? AND subject = ?", 
-        (user_email, code)
-    ).fetchall()
+    assignments = conn.execute("""
+        SELECT * FROM assignments 
+        WHERE subject = ? 
+        AND (
+            user_email = ? 
+            OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?)
+        )
+    """, (code, user_email, user_email)).fetchall()
+    
     conn.close()
 
     # Hantar data 'assignments' dari database ke template subject.html
     return render_template('subject.html', code=code, assignments=assignments)
-
 
 @app.route('/assignment/<title>', methods=["GET", "POST"])
 def assignment(title):

@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<html lang="ms">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,107 +11,125 @@
 
     <div class="container">
         <header>
-            <div class="logo">
-             
-            </div>
+            <div class="logo"></div>
             <div class="nav-tools">
-                <div class="search-bar">
-                   
-                </div>
-                <div class="settings-link">
-
+                <div class="search-bar"></div>
+                <div class="settings-link"></div>
             </div>
         </header>
 
         <main>
             <h1>ADD NEW ASSIGNMENT</h1>
 
-    <form class="assignment-form" action="/add_assignment" method="POST">
+            {% if error_msg %}
+                <div style="background-color: #ffe6e6; color: #cc0000; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-weight: bold; border: 1px solid #cc0000;">
+                    {{ error_msg }}
+                </div>
+            {% endif %}
 
-    <div class="row">
+            <form class="assignment-form" action="/add_assignment" method="POST">
 
-       <div class="row">
-    <div class="input-group">
-        <label>Faculty*</label>
-        <select id="faculty-select" class="dropdown-select" required>
-            <option value="" disabled selected>Select Faculty</option>
-            {% for faculty in mmu_data.keys() %}
-                <option value="{{ faculty }}">{{ faculty }}</option>
-            {% endfor %}
-        </select>
-    </div>
+                <div class="row">
+                    <div class="input-group">
+                        <label>Faculty*</label>
+                        <select id="faculty-select" class="dropdown-select" required>
+                            <option value="" disabled selected>Select Faculty</option>
+                            {% for faculty in mmu_data.keys() %}
+                                <option value="{{ faculty }}">{{ faculty }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-    <div class="input-group">
-        <label>Subject*</label>
-        <select id="subject-select" name="subject" class="dropdown-select" required disabled>
-            <option value="" disabled selected>Select Subject</option>
-        </select>
-    </div>
-</div>
+                    <div class="input-group">
+                        <label>Subject*</label>
+                        <select id="subject-select" name="subject" class="dropdown-select" required disabled>
+                            <option value="" disabled selected>Select Subject</option>
+                        </select>
+                    </div>
+                </div>
 
-<div class="input-group">
-            <label>Assignment Title*</label>
-            <input type="text" name="title" placeholder="Enter assignment or project name" required>
-        </div>
+                <div class="input-group">
+                    <label>Assignment Title*</label>
+                    <input type="text" name="title" placeholder="Enter assignment or project name" required>
+                </div>
 
-    <div class="deadline-container">
-        <div class="input-group">
-            <label>Deadline*</label>
-            <input type="date" id="deadline" name="deadline" class="deadline-input" required>
-        </div>
-    </div>
+                <div class="input-group">
+                    <label>Type of Task:</label>
+                    <div style="margin-top: 5px;">
+                        <input type="radio" name="assignment_type" value="personal" checked onclick="toggleFriendInput(false)"> individual (Personal)
+                        <input type="radio" name="assignment_type" value="shared" onclick="toggleFriendInput(true)"> group (Shared)
+                    </div>
+                </div>
 
-    <div class="button-group">
-        <button type="button" class="btn-cancel" onclick="window.location.href='/dashboard'">CANCEL</button>
-        <button type="submit" class="btn-add">ADD ASSIGNMENT</button>
-    </div>
-</form>
+                <div id="friend_section" class="input-group" style="display: none;">
+                    <label for="friend_input">Friend's Email or Username*</label>
+                    <input type="text" id="friend_input" name="friend_input" placeholder="Enter friend's email or username">
+                </div>
+
+                <div class="deadline-container">
+                    <div class="input-group">
+                        <label>Deadline*</label>
+                        <input type="date" id="deadline" name="deadline" class="deadline-input" required>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button type="button" class="btn-cancel" onclick="window.location.href='/dashboard'">CANCEL</button>
+                    <button type="submit" class="btn-add">ADD ASSIGNMENT</button>
                 </div>
             </form>
         </main>
     </div>
-<script>
-        // Get the date input element by ID
+
+    <script>
+        // Set tarikh minimum untuk input tarikh akhir kepada hari ini
         const deadlineInput = document.getElementById('deadline');
-        
-        // Get the current date in ISO format (YYYY-MM-DD)
         const today = new Date().toISOString().split('T')[0];
-        
-
-        // Set the minimum date that can be selected to today
-
         deadlineInput.min = today;
     </script>
 
     <script>
-    // Ambil data mmu_data dari Flask ke dalam JavaScript
-    const mmuData = {{ mmu_data | tojson | safe }};
-    
-    const facultySelect = document.getElementById('faculty-select');
-    const subjectSelect = document.getElementById('subject-select');
+        // Ambil data mmu_data dari Flask ke dalam JavaScript
+        const mmuData = {{ mmu_data | tojson | safe }};
+        
+        const facultySelect = document.getElementById('faculty-select');
+        const subjectSelect = document.getElementById('subject-select');
 
-    facultySelect.addEventListener('change', function() {
-        const selectedFaculty = this.value;
-        
-        // Kosongkan dropdown subjek
-        subjectSelect.innerHTML = '<option value="" disabled selected>Select Subject</option>';
-        
-        if (selectedFaculty && mmuData[selectedFaculty]) {
-            // Aktifkan dropdown subjek
-            subjectSelect.disabled = false;
+        facultySelect.addEventListener('change', function() {
+            const selectedFaculty = this.value;
             
-            // Tambah subjek mengikut fakulti yang dipilih
-            mmuData[selectedFaculty].forEach(function(s) {
-                const option = document.createElement('option');
-                option.value = s.code + " - " + s.name;
-                option.textContent = s.code + " (" + s.name + ")";
-                subjectSelect.appendChild(option);
-            });
-        } else {
-            subjectSelect.disabled = true;
+            // Kosongkan dropdown subjek
+            subjectSelect.innerHTML = '<option value="" disabled selected>Select Subject</option>';
+            
+            if (selectedFaculty && mmuData[selectedFaculty]) {
+                // Aktifkan dropdown subjek
+                subjectSelect.disabled = false;
+                
+                // Tambah subjek mengikut fakulti yang dipilih
+                mmuData[selectedFaculty].forEach(function(s) {
+                    const option = document.createElement('option');
+                    option.value = s.code + " - " + s.name;
+                    option.textContent = s.code + " (" + s.name + ")";
+                    subjectSelect.appendChild(option);
+                });
+            } else {
+                subjectSelect.disabled = true;
+            }
+        });
+    </script>
+
+    <script>
+        function toggleFriendInput(show) {
+            const friendSection = document.getElementById('friend_section');
+            const friendInput = document.getElementById('friend_input');
+            
+            if (show) {
+                friendSection.style.display = 'block';
+                friendInput.setAttribute('required', 'required'); // Wajib diisi jika pilih group (Shared)
+            } else {
+                friendSection.style.display = 'none';
+                friendInput.removeAttribute('required'); // Tidak wajib diisi jika pilih individual
+                friendInput.value = ''; // Mengosongkan semula input jika bertukar ke personal
+            }
         }
-    });
-</script>
-</body>
-</body>
-</html>
+    </script>
