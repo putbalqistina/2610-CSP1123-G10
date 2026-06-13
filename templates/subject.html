@@ -5,6 +5,8 @@
 <title>Subject</title>
 
 <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
 </head>
 
 <body>
@@ -13,39 +15,44 @@
 
     <!-- Topbar -->
 
-<div class="topbar">
-    <div>AssignMate</div>
-    
-    <input type="text" placeholder="Search 🔍︎">
+        <div class="topbar">
+            <div class="brand">
+                <img src="{{ url_for('static', filename='images/Assignmate 2.png') }}" alt="Logo" class="brand-logo">
+                <span>AssignMate</span>
+            </div>
+            
+            <div class="search-bar">
+                <input type="text" placeholder="Search 🔍︎">
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 15px;">
+                
 
-    <!-- Kelompok Kanan: Filter & Settings -->
-    <div style="display: flex; align-items: center; gap: 15px;">
-    
-    <!-- Dropdown Filter -->
-            <div class="nav-item dropdown">
-            <span class="filter-btn">Notifications | Filter ▾</span>
-                <div class="dropdown-content">
-                    <div class="filter-group">
-                        <label>Status</label>
-                        <select>
-                            <option>All Status</option>
-                            <option>Completed</option>
-                            <option>Not Completed</option>
-                        </select>
-                    </div>
-                    
-                    
-                    <button type="button" class="apply-btn">Apply Filter</button>
+                <div class="settings-link">
+                    <a href="/editprofile"  class="topbar-btn">
+                        <i class="fa-solid fa-gear"></i>
+                    </a>    
+                </div>
+                
+                <div class="analytics-link">
+                    <a href="{{ url_for('analytics') }}" class="topbar-btn">
+                        <i class="fa-solid fa-chart-line"></i>
+                
+                    </a>
+                </div>
+
+                <button id="openTimer" class="topbar-btn">
+                    <i class="fa-solid fa-stopwatch"></i>
+                </button>
+
+                <div class="calendar-link">
+                    <a href="{{ url_for('calendar_view') }}" class="topbar-btn">
+                        <i class="fa-solid fa-calendar"></i>
+                    </a>
                 </div>
             </div>
-            <!-- Ikon Edit Profile (Settings) -->
-        <div class="settings-link">
-            <a href="/editprofile" style="text-decoration: none; cursor: pointer; font-size: 20px;">
-                🌣
-            </a>
         </div>
-        </div> 
-    </div> 
+
 
 
 

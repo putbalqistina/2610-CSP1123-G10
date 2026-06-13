@@ -1,8 +1,28 @@
 body {
     margin: 0;
     font-family: Arial, sans-serif;
-    background: #fffbef;
+    background: linear-gradient(
+        135deg,
+        #fff9db 0%,
+        #fffdf5 50%,
+        #ffffff 100%
+    );
 }
+
+.brand {
+    font-size : 30px;
+    font-weight :700;
+    color : #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.brand-logo {
+    width: auto;
+    height: 40px;
+}
+
 
 /* remove link underline */
 a {
@@ -25,6 +45,38 @@ a {
     border: 1px solid #ccc;
 }
 
+.topbar-btn {
+    border: none;
+    outline: none;
+    cursor: pointer;
+
+    background: white;
+    padding: 10px 14px;
+    border-radius: 10px;
+
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    transition: 0.2s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.topbar-btn:hover{
+    transform:translateY(-2px);
+}
+
+.search-bar input{
+    width: 350px;
+
+    padding: 12px 16px;
+
+    border-radius: 12px;
+    border: 1px solid #ddd;
+
+    font-size: 14px;
+}
+
 /* Title */
 h1 {
     font-size: 20px;
@@ -45,13 +97,16 @@ h1 {
     padding: 30px;
     border-radius: 12px;
     cursor: pointer;
-    transition: 0.3s;
+    transition: all 0.3s ease;
     min-height: 120px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
 }
 
 .card:hover {
-    background: #e5e7eb;
-    transform: translateY(-3px);
+    background: #ffffff;
+    /* hover, kad naik atas sikit dand bayang jadi tebal */
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
 textarea {
@@ -190,6 +245,9 @@ textarea {
     padding: 15px;
     border-radius: 10px;
     margin-bottom: 20px;
+    margin: 20px auto;
+    width: 80%;
+    max-width: 600px;
     transform: translateY(-5px) scale(1.00);
     box-shadow: 0 15px 30px rgba(0,0,0,0.3);
 }
@@ -378,3 +436,9 @@ textarea {
         .status-todo { background: #ffeeba; color: #856404; }
         .status-ongoing { background: #b8daff; color: #004085; }
         .status-completed { background: #c3e6cb; color: #155724; }
+
+.card,
+.assignments-container,
+.alert-box {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}

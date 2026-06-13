@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Group Chat</title>
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='chat.css') }}">
+</head>
+
+<body>
+
+<div class="container">
+
+    <h2>Assignment Group Chat</h2>
+
+    <div class="chat-box">
+
+        {% for msg in messages %}
+
+        <div class="message">
+
+            <div class="sender">
+                {{ msg[0] }}
+            </div>
+
+            <div class="content">
+                {{ msg[1] }}
+            </div>
+
+            <div class="time">
+                {{ msg[2] }}
+            </div>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+    <form action="/send" method="POST">
+
+        <input
+            type="text"
+            name="sender_name"
+            placeholder="Your name"
+            required>
+
+        <textarea
+            name="message"
+            placeholder="Type message..."
+            required>
+        </textarea>
+
+        <button type="submit">
+            Send
+        </button>
+
+    </form>
+
+</div>
+
+</body>
+</html>

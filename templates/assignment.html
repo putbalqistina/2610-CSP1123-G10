@@ -5,6 +5,7 @@
 <title>Assignment</title>
 
 <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 
 <body>
@@ -12,15 +13,30 @@
 <div class="dashboard">
 
     <div class="topbar">
-        <div>AssignMate</div>
-        <input type="text" placeholder="Search 🔍︎">
-        <div>Notifications | Filter</div>
-        <div class="analytics-link">
-    <a href="{{ url_for('analytics') }}" style="text-decoration: none; cursor: pointer;">
-    📊 Analytics
-    </a>
-    </div>
-        <div>⚙️</div>
+        <div class="brand">
+            <img src="{{ url_for('static', filename='images/Assignmate 2.png') }}" alt="Logo" class="brand-logo">
+            <span>AssignMate</span>
+        </div>
+        
+        <div class="search-bar">
+            <input type="text" placeholder="Search 🔍︎">
+        </div>
+        
+        <div style="display: flex; align-items: center; gap: 15px;">
+   
+
+            <div class="analytics-link">
+                <a href="{{ url_for('analytics') }}" class="topbar-btn">
+                    <i class="fa-solid fa-chart-line"></i> 
+                </a>
+            </div>
+
+            <div class="settings-link">
+                <a href="/editprofile" class="topbar-btn">
+                    <i class="fa-solid fa-gear"></i>
+                </a>
+            </div>
+        </div>
     </div>
 
     <h1>{{ title }}</h1>

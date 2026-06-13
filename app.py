@@ -147,11 +147,60 @@ def init_color_db():
         )
     ''')
 
+def init_user_db():
+    conn = get_db()
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE,
+            email TEXT UNIQUE,
+            password TEXT,
+            full_name TEXT,
+            bio TEXT,
+            gender TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+def init_assignment_db():
+    conn = get_db()
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS assignments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            subject TEXT,
+            title TEXT,
+            deadline TEXT,
+            user_email TEXT,
+            status TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+def init_db():
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        assignment_id INTEGER,
+        sender_name TEXT,
+        message TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
     conn.commit()
     conn.close()
 
 # Panggil fungsi ini semasa startup aplikasi Flask
 init_color_db()
+init_user_db()
+init_assignment_db()
+init_db()
+
 
 # --- Data Stores ---
 
@@ -588,13 +637,17 @@ def calendar_view():
 
 @app.route('/delete/<filename>')
 def delete_file(filename):
-    path = os.path.join(
-        app.config['UPLOAD_FOLDER'],
-        filename
-    )
+
+    print('Deleting', filename)
+
+    path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+    print("Path:", path)
+    print("Exists:", os.path.exists(path))
 
     if os.path.exists(path):
         os.remove(path)
+        print("Deleted")
 
     for assignment in assignment_store.values():
         if filename in assignment["attachment"]:
@@ -608,6 +661,51 @@ def uploaded_file(filename):
         app.config['UPLOAD_FOLDER'],
         filename
     )
+
+# Route untuk chat
+
+@app.route('/')
+def chat():
+
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT sender_name,
+               message,
+               created_at
+        FROM messages
+        ORDER BY created_at
+    """)
+
+    messages = cursor.fetchall()
+
+    conn.close()
+
+    return render_template(
+        'chat.html',
+        messages=messages
+    )
+
+@app.route('/send', methods=['POST'])
+def send_message():
+
+    sender_name = request.form['sender_name']
+    message = request.form['message']
+
+    conn = sqlite3.connect('database.db')
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO messages
+        (assignment_id, sender_name, message)
+        VALUES (?, ?, ?)
+    """, (1, sender_name, message))
+
+    conn.commit()
+    conn.close()
+
+    return redirect('/')
 
 
 if __name__ == '__main__':
