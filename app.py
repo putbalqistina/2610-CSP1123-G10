@@ -82,12 +82,28 @@ def init_db():
             FOREIGN KEY (user_email) REFERENCES users (email)
         )
     """)
-    
     try:
         conn.execute("ALTER TABLE assignments ADD COLUMN status TEXT DEFAULT 'to_do'")
     except:
         pass  # prevents error if column already exists
+
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS assignment_invitations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            assignment_id INTEGER NOT NULL,
+            inviter_email TEXT NOT NULL,
+            invitee_email TEXT NOT NULL,
+            status TEXT DEFAULT 'pending'
+            )
+    """)
     
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS assignment_members (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            assignment_id INTEGER NOT NULL,
+            member_email TEXT NOT NULL
+        );
+    """)
     conn.commit()
     conn.close()
 
@@ -246,6 +262,8 @@ def add_assignment():
     mmu_data = load_mmu_subjects() 
 
     if request.method == 'POST':
+        conn = sqlite3.connect('database.db')
+        cursor = conn.cursor()
         subject = request.form.get('subject')
         title = request.form.get('title')
         deadline = request.form.get('deadline')
@@ -255,6 +273,7 @@ def add_assignment():
             "INSERT INTO assignments (subject, title, deadline, user_email, status) VALUES (?, ?, ?, ?, 'to_do')",
             (subject, title, deadline, user_email)
         )
+        
         conn.commit()
         conn.close()
         
@@ -397,7 +416,7 @@ def subject(code):
     if not user_email:
         return redirect(url_for('login'))
 
-    # Ambil data assignment dari database berdasarkan email user DAN subjek yang dipilih
+ 
     conn = get_db()
     assignments = conn.execute(
         "SELECT * FROM assignments WHERE user_email = ? AND subject = ?", 
@@ -405,7 +424,7 @@ def subject(code):
     ).fetchall()
     conn.close()
 
-    # Hantar data 'assignments' dari database ke template subject.html
+
     return render_template('subject.html', code=code, assignments=assignments)
 
 
