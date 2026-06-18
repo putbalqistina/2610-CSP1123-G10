@@ -53,6 +53,13 @@
 
         <div>
             <div class="card" style="margin-bottom:15px;">
+                <h3>Members</h3>
+                    
+                    <div style="margin-bottom:10px;">
+                        <button class="btn btn-save" onclick="window.location.href='/chat'" title="Group Chat">Chat</button>
+                    </div>
+            </div>
+            <div class="card" style="margin-bottom:15px;">
                 <h3>Comments</h3>
                 {% for comment in comments %}
                     <p>• {{ comment }}</p>
@@ -137,7 +144,6 @@
                     <div style="margin-bottom:10px;">
                         <button class="btn btn-save" onclick="window.location.href='/chat'" title="Group Chat">Chat</button>
                     </div>
-                
         </div>
 
     </div>
