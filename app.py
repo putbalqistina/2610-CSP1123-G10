@@ -753,9 +753,10 @@ def uploaded_file(filename):
 
 # Route untuk chat
 
-@app.route('/')
+@app.route('/chat')
 def chat():
-
+    if 'user' not in session:
+        return redirect(url_for('login'))
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
 
@@ -794,7 +795,8 @@ def send_message():
     conn.commit()
     conn.close()
 
-    return redirect('/')
+    return redirect(url_for("chat"))
+
 
 
 if __name__ == '__main__':
