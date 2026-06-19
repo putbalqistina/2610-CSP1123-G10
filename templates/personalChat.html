@@ -6,9 +6,22 @@
 
 <body>
 
-<h2>Personal Chat</h2>
+<h2>Choose User</h2>
 
-<p>Feature under development.</p>
+{% for user in users %}
+
+<div>
+
+    <a href="{{ url_for('personal_chat_room',
+                        email=user['email']) }}">
+
+        {{ user['username'] }}
+
+    </a>
+
+</div>
+
+{% endfor %}
 
 </body>
 </html>

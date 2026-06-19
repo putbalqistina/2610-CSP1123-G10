@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Personal Chat</title>
+</head>
+
+<body>
+
+<h2>
+Chat with
+{{ target_user['username'] }}
+</h2>
+
+<hr>
+
+{% for msg in messages %}
+
+<div>
+
+<b>{{ msg['sender_email'] }}</b>
+
+<br>
+
+{{ msg['message'] }}
+
+<hr>
+
+</div>
+
+{% endfor %}
+
+<form action="{{ url_for('send_personal_message') }}"
+      method="POST">
+
+    <input
+        type="hidden"
+        name="receiver_email"
+        value="{{ target_user['email'] }}">
+
+    <textarea
+        name="message"
+        required>
+    </textarea>
+
+    <button type="submit">
+        Send
+    </button>
+
+</form>
+
+</body>
+</html>

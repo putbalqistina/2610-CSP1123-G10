@@ -788,14 +788,115 @@ def chat():
         messages=messages
     )
 
-@app.route('/personal_chat') # Route persona chat
-def personal_chat_list():
+@app.route('/personal_chat') #Route peraonal chat dengan other member
+def personal_chat():
 
     if 'user' not in session:
         return redirect(url_for('login'))
 
-    return render_template('personalChat.html')
+    current_user = session['user']
 
+    conn = get_db()
+
+    users = conn.execute("""
+        SELECT username,email
+        FROM users
+        WHERE email != ?
+        ORDER BY username
+    """, (current_user,)).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "personalChat.html",
+        users=users
+    )
+
+#Route chat room dengan other member
+@app.route('/personal_chat/<email>')
+def personal_chat_room(email):
+
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    current_user = session['user']
+
+    conn = get_db()
+
+    target_user = conn.execute("""
+        SELECT *
+        FROM users
+        WHERE email = ?
+    """, (email,)).fetchone()
+
+    messages = conn.execute("""
+        SELECT *
+        FROM personal_messages
+        WHERE
+        (
+            sender_email = ?
+            AND receiver_email = ?
+        )
+        OR
+        (
+            sender_email = ?
+            AND receiver_email = ?
+        )
+        ORDER BY created_at
+    """, (
+        current_user,
+        email,
+        email,
+        current_user
+    )).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "personalChatRoom.html",
+        target_user=target_user,
+        messages=messages
+    )
+
+#send message untuk personal chat
+
+@app.route('/send_personal_message', methods=['POST'])
+def send_personal_message():
+
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    sender_email = session['user']
+
+    receiver_email = request.form['receiver_email']
+
+    message = request.form['message']
+
+    conn = get_db()
+
+    conn.execute("""
+        INSERT INTO personal_messages
+        (
+            sender_email,
+            receiver_email,
+            message
+        )
+        VALUES (?, ?, ?)
+    """, (
+        sender_email,
+        receiver_email,
+        message
+    ))
+
+    conn.commit()
+    conn.close()
+
+    return redirect(
+        url_for(
+            'personal_chat_room',
+            email=receiver_email
+        )
+    )
 
 @app.route('/send', methods=['POST'])
 def send_message():
