@@ -151,6 +151,17 @@ def init_all_tables():
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
         """)
+    
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS personal_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sender_email TEXT NOT NULL,
+        receiver_email TEXT NOT NULL,
+        message TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+""")
+    
     conn.commit()
     conn.close()
 
@@ -777,13 +788,34 @@ def chat():
         messages=messages
     )
 
+@app.route('/personal_chat') # Route persona chat
+def personal_chat_list():
+
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    return render_template('personalChat.html')
+
+
 @app.route('/send', methods=['POST'])
 def send_message():
 
-    sender_name = request.form['sender_name']
+    user_email = session.get('user')
+
+    if not user_email:
+        return redirect(url_for('login'))
+
     message = request.form['message']
 
-    conn = sqlite3.connect('database.db')
+    conn = get_db()
+
+    user = conn.execute(
+        "SELECT username FROM users WHERE email = ?",
+        (user_email,)
+    ).fetchone()
+
+    sender_name = user["username"]
+
     cursor = conn.cursor()
 
     cursor.execute("""
