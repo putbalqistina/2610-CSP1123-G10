@@ -605,6 +605,12 @@ def assignment(title):
         return redirect(url_for("assignment", title=title))
     
     conn = get_db()
+    user_data = conn.execute(
+        "SELECT * FROM users WHERE email = ? OR username = ?", 
+        (user_email, user_email)
+    ).fetchone()
+
+    conn = get_db()
     assignment_row = conn.execute("SELECT status FROM assignments WHERE title = ?", (title,)).fetchone()
     logs = conn.execute("""
     SELECT *
@@ -624,7 +630,8 @@ def assignment(title):
         comments=data["comments"],
         attachment=data["attachment"],
         status=status,
-        logs=logs
+        logs=logs,
+        user=user_data
     )
 
 
