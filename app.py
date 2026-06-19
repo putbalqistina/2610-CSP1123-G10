@@ -386,8 +386,9 @@ def dashboard():
     ).fetchone()
     
     selected_filter = request.args.get('subject_filter', 'All')
-    
-    # 1. KEMASKINI: Ambil senarai subjek tersendiri daripada tugasan milik sendiri ATAU tugasan kumpulan
+    search_query = request.args.get('search', '').strip()  
+
+    # 1. Ambil senarai subjek tersendiri untuk drop-down filter
     subject_rows = conn.execute("""
         SELECT DISTINCT subject FROM assignments 
         WHERE user_email = ? 
@@ -395,19 +396,25 @@ def dashboard():
     """, (user_email, user_email)).fetchall()
     user_subjects = [row['subject'] for row in subject_rows]
 
-    # 2. KEMASKINI: Ambil data assignments (Milik sendiri + Tugasan kumpulan)
-    if selected_filter == 'All' or selected_filter == '':
-        assignments = conn.execute("""
-            SELECT * FROM assignments 
-            WHERE user_email = ? 
-            OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?)
-        """, (user_email, user_email)).fetchall()
-    else:
-        assignments = conn.execute("""
-            SELECT * FROM assignments 
-            WHERE (user_email = ? OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?))
-            AND subject = ?
-        """, (user_email, user_email, selected_filter)).fetchall()
+    # 2. Bina query SQL dinamik bersama fungsi Search
+    query = """
+        SELECT * FROM assignments 
+        WHERE (user_email = ? OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?))
+    """
+    params = [user_email, user_email]
+
+    # Jika user pilih subjek tertentu di drop-down filter
+    if selected_filter != 'All' and selected_filter != '':
+        query += " AND subject = ?"
+        params.append(selected_filter)
+
+    # Jika user menaip sesuatu di search bar (Cari pada Title atau Subject)
+    if search_query:
+        query += " AND (title LIKE ? OR subject LIKE ?)"
+        params.append(f"%{search_query}%")
+        params.append(f"%{search_query}%")
+
+    assignments = conn.execute(query, params).fetchall()
     
     today = datetime.today().date()
     upcoming = []
@@ -422,8 +429,8 @@ def dashboard():
             pass
 
     conn.close()
-    return render_template('dashboard.html', subjects=user_subjects, assignments=assignments, upcoming=upcoming, user=user_data)
-
+    return render_template('dashboard.html', subjects=user_subjects, assignments=assignments, upcoming=upcoming, user=user_data, search_query=search_query)
+    
 @app.route('/editprofile', methods=['GET', 'POST'])
 def editprofile():
     user_identifier = session.get('user') 
@@ -529,21 +536,37 @@ def subject(code):
     if not user_email:
         return redirect(url_for('login'))
 
-
     conn = get_db()
-    assignments = conn.execute("""
-        SELECT * FROM assignments 
-        WHERE subject = ? 
-        AND (
-            user_email = ? 
-            OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?)
-        )
-    """, (code, user_email, user_email)).fetchall()
     
+    # 1. Ambil input teks dari search bar (jika ada)
+    search_query = request.args.get('search', '').strip()  
+
+    # 2. Bina query SQL dinamik - Ditambah "AND subject LIKE ?" untuk tapis subjek yang betul
+    query = """
+        SELECT * FROM assignments 
+        WHERE (user_email = ? OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?))
+        AND subject LIKE ?
+    """
+    # Guna `f"%{code}%"` supaya ia sepadan dengan format nama penuh subjek (contoh: "CMF1114 - Multimedia Fundamentals")
+    params = [user_email, user_email, f"%{code}%"]
+
+    # 3. Jika user menaip sesuatu di search bar, tapis berdasarkan Title
+    if search_query:
+        query += " AND title LIKE ?"
+        params.append(f"%{search_query}%")
+
+    assignments = conn.execute(query, params).fetchall()
+    
+    # Ambil data user untuk paparan
+    user_data = conn.execute(
+        "SELECT * FROM users WHERE email = ? OR username = ?", 
+        (user_email, user_email)
+    ).fetchone()
+
     conn.close()
-
-
-    return render_template('subject.html', code=code, assignments=assignments)
+    
+    # Hantar senarai yang telah ditapis dan search_query ke fail HTML subjek
+    return render_template('subject.html', code=code, assignments=assignments, user=user_data, search_query=search_query)
 
 @app.route('/assignment/<title>', methods=["GET", "POST"])
 def assignment(title):

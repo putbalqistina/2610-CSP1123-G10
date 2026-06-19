@@ -1,34 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Subject</title>
-
-<link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-
+    <meta charset="UTF-8">
+    <title>{{ code }} - Assignments</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 
 <body>
 
- <div class="dashboard">
+    <div class="dashboard">
 
         <div class="topbar">
             <div class="brand">
                 <img src="{{ url_for('static', filename='images/Assignmate 2.png') }}" alt="Logo" class="brand-logo">
                 <a href="{{ url_for('dashboard') }}">
-                    <span>AssignMate</span></a>
+                    <span>AssignMate</span>
+                </a>
             </div>
             
-            <div class="search-bar">
-                <input type="text" placeholder="Search 🔍︎">
+            <div class="search-container" style="flex-grow: 1; display: flex; justify-content: center;">
+                <form action="{{ url_for('subject', code=code) }}" method="GET" style="display: inline-flex; align-items: center; background: #fff; border: 1px solid #ccc; border-radius: 20px; padding: 5px 15px; width: 100%; max-width: 400px;">
+                    <input 
+                        type="text" 
+                        name="search" 
+                        placeholder="Search assignments in {{ code }}..." 
+                        value="{{ search_query or '' }}" 
+                        style="border: none; outline: none; width: 100%; font-size: 14px; background: transparent; color: #000;"
+                    >
+                    <button type="submit" style="background: none; border: none; cursor: pointer; color: #555;">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                </form>
             </div>
             
             <div style="display: flex; align-items: center; gap: 15px;">
-                
                 <div class="nav-item dropdown">
-                    <button class="topbar-btn"><i class="fa-solid fa-filter"></i>Filter
-                    </button>
+                    <button class="topbar-btn"><i class="fa-solid fa-filter"></i>Filter</button>
                     <div class="dropdown-content">
                         <form action="/dashboard" method="GET">
                             <div class="filter-group">
@@ -46,54 +54,42 @@
                 </div>
 
                 <div class="settings-link">
-                    <a href="/editprofile"  class="topbar-btn">
-                        <i class="fa-solid fa-gear"></i>
-                    </a>    
+                    <a href="/editprofile" class="topbar-btn"><i class="fa-solid fa-gear"></i></a>    
                 </div>
                 
                 <div class="analytics-link">
-                    <a href="{{ url_for('analytics') }}" class="topbar-btn">
-                        <i class="fa-solid fa-chart-line"></i>
-                
-                    </a>
+                    <a href="{{ url_for('analytics') }}" class="topbar-btn"><i class="fa-solid fa-chart-line"></i></a>
                 </div>
 
-                <button id="openTimer" class="topbar-btn">
-                    <i class="fa-solid fa-stopwatch"></i>
-                </button>
+                <button id="openTimer" class="topbar-btn"><i class="fa-solid fa-stopwatch"></i></button>
 
                 <div class="calendar-link">
-                    <a href="{{ url_for('calendar_view') }}" class="topbar-btn">
-                        <i class="fa-solid fa-calendar"></i>
-                    </a>
+                    <a href="{{ url_for('calendar_view') }}" class="topbar-btn"><i class="fa-solid fa-calendar"></i></a>
                 </div>
 
                 <div class="personal-chat-link">
-                    <a href="{{ url_for('personal_chat') }}" class="topbar-btn">
-                        <i class="fa-solid fa-comments"></i>
-                    </a>
+                    <a href="{{ url_for('personal_chat') }}" class="topbar-btn"><i class="fa-solid fa-comments"></i></a>
                 </div>
             </div>
         </div>
 
+        <h1>{{ code }} Assignments</h1>
 
+        <div class="cards">
+            {% for assignment in assignments %}
+                <a href="{{ url_for('assignment', title=assignment['title']) }}">
+                    <div class="card">
+                        {{ assignment['title'] }}
+                        <div class="due-date"></div>
+                        <strong>Due Date:</strong> {{ assignment['deadline'] }}
+                    </div>
+                </a>
+            {% else %}
+                <p class="no-data" style="grid-column: 1 / -1; color: #777; font-style: italic;">No assignments found match your search query.</p>
+            {% endfor %}
+        </div>
 
-
-    <!-- Title -->
-    <h1>{{ code }} Assignments</h1>
-
-    <!-- Cards -->
-    <div class="cards">
-    {% for assignment in assignments %}
-        <a href="{{ url_for('assignment', title=assignment['title']) }}">
-            <div class="card">
-                {{ assignment['title'] }}
-            </div>
-        </a>
-    {% endfor %}
-</div>
-
-</div>
+    </div>
 
 </body>
 </html>
