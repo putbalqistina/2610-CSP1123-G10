@@ -35,6 +35,26 @@ def load_mmu_subjects():
             return json.load(f)
     except FileNotFoundError:
         return {}
+    
+def log_activity(title, activity):
+
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+    conn = get_db()
+
+    conn.execute("""
+        INSERT INTO activity_logs
+        (assignment_title, activity, timestamp)
+        VALUES (?, ?, ?)
+    """, (
+        title,
+        activity,
+        timestamp
+    ))
+
+    conn.commit()
+    conn.close()
 
 def allowed_file(filename):
     ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'docx', 'xlsx', 'zip'}
@@ -73,6 +93,13 @@ def init_all_tables():
             FOREIGN KEY (user_email) REFERENCES users (email)
         )
     """)
+
+    try:
+        conn.execute("ALTER TABLE assignments ADD COLUMN status TEXT DEFAULT 'to_do'")
+    except:
+        pass  # prevents error if column already exists
+
+
     
     # 3. Jadual Assignment Members
     conn.execute("""
@@ -108,6 +135,22 @@ def init_all_tables():
         )
     """)
     
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS assignment_members (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            assignment_id INTEGER NOT NULL,
+            member_email TEXT NOT NULL
+        );
+    """)
+
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS activity_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            assignment_title TEXT,
+            activity TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
     conn.commit()
     conn.close()
 
@@ -254,6 +297,8 @@ def add_assignment():
     error_msg = None
 
     if request.method == 'POST':
+        conn = sqlite3.connect('database.db')
+        cursor = conn.cursor()
         subject = request.form.get('subject')
         title = request.form.get('title')
         deadline = request.form.get('deadline')
@@ -287,6 +332,8 @@ def add_assignment():
                VALUES (?, ?, ?, ?, 'to_do', ?, ?)""",
             (subject, title, deadline, user_email, is_shared, user_email)
         )
+
+        
         assignment_id = cursor.lastrowid
         
         # 2. Jika jenis berkumpulan, daftarkan pencipta & kawan ke table assignment_members
@@ -306,6 +353,7 @@ def add_assignment():
                 except sqlite3.IntegrityError:
                     pass # Abaikan ralat jika ter-input email sendiri
             
+
         conn.commit()
         conn.close()
         
@@ -470,6 +518,7 @@ def subject(code):
     if not user_email:
         return redirect(url_for('login'))
 
+
     conn = get_db()
     assignments = conn.execute("""
         SELECT * FROM assignments 
@@ -482,11 +531,15 @@ def subject(code):
     
     conn.close()
 
-    # Hantar data 'assignments' dari database ke template subject.html
+
     return render_template('subject.html', code=code, assignments=assignments)
 
 @app.route('/assignment/<title>', methods=["GET", "POST"])
 def assignment(title):
+    user_email = session.get("user")
+    if not user_email:
+        return redirect(url_for("login"))
+    
     if title not in assignment_store:
         assignment_store[title] = {
             "description": "",
@@ -498,12 +551,23 @@ def assignment(title):
 
     if request.method == "POST":
         new_desc = request.form.get("description")
+
         if new_desc:
             data["description"] = new_desc
 
+            log_activity(
+                title,
+                f"{session['user']} updated the description."
+            )
         new_comment = request.form.get("comment")
+
         if new_comment:
             data["comments"].append(new_comment)
+
+            log_activity(
+                title,
+                f"{session['user']} added a comment."
+            )
 
         file = request.files.get("file")
 
@@ -519,7 +583,16 @@ def assignment(title):
             file.save(path)
             data["attachment"].append(unique_filename)
 
+            log_activity(
+                title,
+                f"{session['user']} uploaded '{filename}'."
+            )
+
         status = request.form.get("status")
+        log_activity(
+            title,
+            f"{session['user']} changed the status to '{status}'."
+        )
         conn = get_db()
         conn.execute("""
             UPDATE assignments 
@@ -532,7 +605,20 @@ def assignment(title):
         return redirect(url_for("assignment", title=title))
     
     conn = get_db()
+    user_data = conn.execute(
+        "SELECT * FROM users WHERE email = ? OR username = ?", 
+        (user_email, user_email)
+    ).fetchone()
+
+    conn = get_db()
     assignment_row = conn.execute("SELECT status FROM assignments WHERE title = ?", (title,)).fetchone()
+    logs = conn.execute("""
+    SELECT *
+    FROM activity_logs
+    WHERE assignment_title = ?
+    ORDER BY timestamp DESC
+""", (title,)).fetchall()
+    
     conn.close()
 
     status = assignment_row["status"] if assignment_row else "to_do"
@@ -543,7 +629,9 @@ def assignment(title):
         description=data["description"],
         comments=data["comments"],
         attachment=data["attachment"],
-        status=status
+        status=status,
+        logs=logs,
+        user=user_data
     )
 
 
@@ -672,9 +760,10 @@ def uploaded_file(filename):
 
 # Route untuk chat
 
-@app.route('/')
+@app.route('/chat')
 def chat():
-
+    if 'user' not in session:
+        return redirect(url_for('login'))
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
 
@@ -713,7 +802,8 @@ def send_message():
     conn.commit()
     conn.close()
 
-    return redirect('/')
+    return redirect(url_for("chat"))
+
 
 
 if __name__ == '__main__':

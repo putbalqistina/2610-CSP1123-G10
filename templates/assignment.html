@@ -41,7 +41,7 @@
 
     <h1>{{ title }}</h1>
 
-    <div class="cards" style="grid-template-columns: 2fr 1fr;">
+    <div class="cards" >
 
         <div class="card">
             <h3>Assignment Description</h3>
@@ -53,6 +53,25 @@
 
         <div>
             <div class="card" style="margin-bottom:15px;">
+                <h3>Members</h3>
+                    
+                    <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                        <!-- Memeriksa jika user mempunyai gambar profile, jika tiada guna gambar placeholder default -->
+                        {% if user and user.profile_pic %}
+                            <img src="{{ url_for('uploaded_file', filename=user.profile_pic) }}" 
+                                alt="Profile Picture" 
+                                style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #ccc;">
+                        {% else %}
+                            <!-- Gambar default jika user belum upload apa-apa -->
+                            <img src="https://ui-avatars.com/api/?name={{ user.username if user else 'User' }}&background=random"
+                                alt="Default Profile" 
+                                style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #ccc;">
+                        {% endif %}
+                        
+                        <h3 style="margin: 0; font-weight: bold;">{{ user.username }}</h3>
+                    </div>
+            </div>
+            <div class="card" style="margin-bottom:15px;">
                 <h3>Comments</h3>
                 {% for comment in comments %}
                     <p>• {{ comment }}</p>
@@ -63,6 +82,18 @@
                     <button type="submit" class="btn btn-add">Add</button>
                 </form>
             </div>
+
+            <div class="card" style="margin-bottom:15px;">
+                <h3>Activity Log</h3>
+
+                {% for log in logs %}
+                    <div style="margin-bottom:10px;">
+                        <p>{{ log["activity"] }}</p>
+                        <small>{{ log["timestamp"] }}</small>
+                    </div>
+                {% endfor %}
+            </div>
+
                 <div class="card">
                     <h3>Attachment</h3>
 
@@ -118,6 +149,15 @@
                 <button type="submit" class="btn btn-save">Update Status</button>
             </form>
         </div>
+
+        <div class="card" style="margin-bottom:15px;">
+                <h3>Group Chat</h3>
+                    
+                    <div style="margin-bottom:10px;">
+                        <button class="btn btn-save" onclick="window.location.href='/chat'" title="Group Chat">Chat</button>
+                    </div>
+        </div>
+
     </div>
 
 </div>
