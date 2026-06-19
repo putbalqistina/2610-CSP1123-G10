@@ -8,20 +8,24 @@
 
 <h2>Choose User</h2>
 
-{% for user in users %}
+{% if users %}
 
-<div>
+    {% for user in users %}
 
-    <a href="{{ url_for('personal_chat_room',
-                        email=user['email']) }}">
+    <div>
+        <a href="{{ url_for('personal_chat_room',
+                            email=user['email']) }}">
+            {{ user['username'] }}
+        </a>
+    </div>
 
-        {{ user['username'] }}
+    {% endfor %}
 
-    </a>
+{% else %}
 
-</div>
+    <p>No other users available.</p>
 
-{% endfor %}
+{% endif %}
 
 </body>
 </html>
