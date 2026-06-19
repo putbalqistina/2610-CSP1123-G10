@@ -11,16 +11,12 @@
 
 <body>
 
-<div class="dashboard">
-
-    <!-- Topbar -->
+ <div class="dashboard">
 
         <div class="topbar">
             <div class="brand">
                 <img src="{{ url_for('static', filename='images/Assignmate 2.png') }}" alt="Logo" class="brand-logo">
-                <a href="{{ url_for('dashboard') }}" class="brand-link">
-                    <span>AssignMate</span>
-                </a>
+                <span>AssignMate</span>
             </div>
             
             <div class="search-bar">
@@ -29,6 +25,24 @@
             
             <div style="display: flex; align-items: center; gap: 15px;">
                 
+                <div class="nav-item dropdown">
+                    <button class="topbar-btn"><i class="fa-solid fa-filter"></i>Filter
+                    </button>
+                    <div class="dropdown-content">
+                        <form action="/dashboard" method="GET">
+                            <div class="filter-group">
+                                <label for="subject_filter">Subject</label>
+                                <select name="subject_filter" id="subject_filter">
+                                    <option value="All" {% if request.args.get('subject_filter') == 'All' or not request.args.get('subject_filter') %}selected{% endif %}>All Subjects</option>
+                                    {% for subject in subjects %}
+                                        <option value="{{ subject }}" {% if request.args.get('subject_filter') == subject %}selected{% endif %}>{{ subject }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <button type="submit" class="apply-btn">Apply Filter</button>
+                        </form>
+                    </div>
+                </div>
 
                 <div class="settings-link">
                     <a href="/editprofile"  class="topbar-btn">
@@ -50,6 +64,12 @@
                 <div class="calendar-link">
                     <a href="{{ url_for('calendar_view') }}" class="topbar-btn">
                         <i class="fa-solid fa-calendar"></i>
+                    </a>
+                </div>
+
+                <div class="personal-chat-link">
+                    <a href="{{ url_for('personal_chat_list') }}" class="topbar-btn">
+                        <i class="fa-solid fa-comments"></i>
                     </a>
                 </div>
             </div>
