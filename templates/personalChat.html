@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Personal Chat</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='personalChat.css') }}">
+</head>
+
+<body>
+
+<h2>Choose User</h2>
+
+{% if users %}
+
+    {% for user in users %}
+
+    <div>
+        <a href="{{ url_for('personal_chat_room',
+                            email=user['email']) }}">
+            {{ user['username'] }}
+        </a>
+    </div>
+
+    {% endfor %}
+
+{% else %}
+
+    <p>No other users available.</p>
+
+{% endif %}
+
+</body>
+</html>

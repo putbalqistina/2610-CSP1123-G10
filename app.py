@@ -151,6 +151,17 @@ def init_all_tables():
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
         """)
+    
+    conn.execute("""
+    CREATE TABLE IF NOT EXISTS personal_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sender_email TEXT NOT NULL,
+        receiver_email TEXT NOT NULL,
+        message TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+""")
+    
     conn.commit()
     conn.close()
 
@@ -784,13 +795,135 @@ def chat():
         messages=messages
     )
 
+@app.route('/personal_chat') #Route peraonal chat dengan other member
+def personal_chat():
+
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    current_user = session['user']
+
+    conn = get_db()
+
+    users = conn.execute("""
+        SELECT username,email
+        FROM users
+        WHERE email != ?
+        ORDER BY username
+    """, (current_user,)).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "personalChat.html",
+        users=users
+    )
+
+#Route chat room dengan other member
+@app.route('/personal_chat/<email>')
+def personal_chat_room(email):
+
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    current_user = session['user']
+
+    conn = get_db()
+
+    target_user = conn.execute("""
+        SELECT *
+        FROM users
+        WHERE email = ?
+    """, (email,)).fetchone()
+
+    messages = conn.execute("""
+        SELECT *
+        FROM personal_messages
+        WHERE
+        (
+            sender_email = ?
+            AND receiver_email = ?
+        )
+        OR
+        (
+            sender_email = ?
+            AND receiver_email = ?
+        )
+        ORDER BY created_at
+    """, (
+        current_user,
+        email,
+        email,
+        current_user
+    )).fetchall()
+
+    conn.close()
+
+    return render_template(
+        "personalChatRoom.html",
+        target_user=target_user,
+        messages=messages
+    )
+
+#send message untuk personal chat
+
+@app.route('/send_personal_message', methods=['POST'])
+def send_personal_message():
+
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    sender_email = session['user']
+
+    receiver_email = request.form['receiver_email']
+
+    message = request.form['message']
+
+    conn = get_db()
+
+    conn.execute("""
+        INSERT INTO personal_messages
+        (
+            sender_email,
+            receiver_email,
+            message
+        )
+        VALUES (?, ?, ?)
+    """, (
+        sender_email,
+        receiver_email,
+        message
+    ))
+
+    conn.commit()
+    conn.close()
+
+    return redirect(
+        url_for(
+            'personal_chat_room',
+            email=receiver_email
+        )
+    )
+
 @app.route('/send', methods=['POST'])
 def send_message():
 
-    sender_name = request.form['sender_name']
+    user_email = session.get('user')
+
+    if not user_email:
+        return redirect(url_for('login'))
+
     message = request.form['message']
 
-    conn = sqlite3.connect('database.db')
+    conn = get_db()
+
+    user = conn.execute(
+        "SELECT username FROM users WHERE email = ?",
+        (user_email,)
+    ).fetchone()
+
+    sender_name = user["username"]
+
     cursor = conn.cursor()
 
     cursor.execute("""
