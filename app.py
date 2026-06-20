@@ -606,26 +606,22 @@ def assignment(title):
 
     if request.method == "POST":
         new_desc = request.form.get("description")
-
         if new_desc:
             data["description"] = new_desc
-
             log_activity(
                 title,
                 f"{session['user']} updated the description."
             )
-        new_comment = request.form.get("comment")
 
+        new_comment = request.form.get("comment")
         if new_comment:
             data["comments"].append(new_comment)
-
             log_activity(
                 title,
                 f"{session['user']} added a comment."
             )
 
         file = request.files.get("file")
-
         if (
             file and
             file.filename != "" and
@@ -637,7 +633,6 @@ def assignment(title):
             path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
             file.save(path)
             data["attachment"].append(unique_filename)
-
             log_activity(
                 title,
                 f"{session['user']} uploaded '{filename}'."
@@ -660,40 +655,29 @@ def assignment(title):
         return redirect(url_for("assignment", title=title))
     
     conn = get_db()
-    user_data = conn.execute(
-        "SELECT * FROM users WHERE email = ? OR username = ?", 
-        (user_email, user_email)
-    ).fetchone() 
-
-    conn = get_db()
-    assignment_row = conn.execute("SELECT status FROM assignments WHERE title = ?", (title,)).fetchone()
-    logs = conn.execute("""
-    SELECT *
-    FROM activity_logs
-    WHERE assignment_title = ?
-    ORDER BY timestamp DESC
-""", (title,)).fetchall()
     
+    # 1. Ambil data user semasa yang login
+    user_data = conn.execute("SELECT * FROM users WHERE email = ? OR username = ?", (user_email, user_email)).fetchone()
+
+    # 2. Ambil data assignment berdasarkan tajuk yang betul
+    assignment_row = conn.execute("SELECT * FROM assignments WHERE title = ?", (title,)).fetchone()
+    
+    status = "to_do"
+    members_data = []
+    
+    # 3.Guna ID sebenar daripada tugasan untuk cari ahli kumpulan
+    if assignment_row:
+        status = assignment_row["status"]
+        members_data = conn.execute("""
+            SELECT users.username, users.full_name, users.bio, users.profile_pic 
+            FROM assignment_members 
+            JOIN users ON assignment_members.member_email = users.email
+            WHERE assignment_members.assignment_id = ?
+        """, (assignment_row["id"],)).fetchall() 
+
+    # 4. Ambil logs bagi assignment ini
+    logs = conn.execute("SELECT * FROM activity_logs WHERE assignment_title = ? ORDER BY timestamp DESC", (title,)).fetchall()
     conn.close()
-
-    status = assignment_row["status"] if assignment_row else "to_do"
-
-    conn = sqlite3.connect("database.db")
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
-
-    cursor.execute("""
-    SELECT users.username, users.profile_pic, users.email
-    FROM assignment_members
-    JOIN users
-        ON assignment_members.member_email = users.email
-    WHERE assignment_members.assignment_id = ?
-""", (assignment_id,))
-
-    members = cursor.fetchall()
-
-    conn.close()
-
 
     return render_template(
         "assignment.html",
@@ -704,7 +688,7 @@ def assignment(title):
         status=status,
         logs=logs,
         user=user_data,
-        members=members
+        members=members_data 
     )
 
 
