@@ -547,6 +547,16 @@ def assignment(title):
             "attachment": []
         }
 
+    conn = get_db()
+
+    assignment = conn.execute("""
+        SELECT id
+        FROM assignments
+        WHERE title = ?
+    """, (title,)).fetchone()
+
+    assignment_id = assignment["id"]
+
     data = assignment_store[title]
 
     if request.method == "POST":
@@ -608,7 +618,7 @@ def assignment(title):
     user_data = conn.execute(
         "SELECT * FROM users WHERE email = ? OR username = ?", 
         (user_email, user_email)
-    ).fetchone()
+    ).fetchone() 
 
     conn = get_db()
     assignment_row = conn.execute("SELECT status FROM assignments WHERE title = ?", (title,)).fetchone()
@@ -623,6 +633,23 @@ def assignment(title):
 
     status = assignment_row["status"] if assignment_row else "to_do"
 
+    conn = sqlite3.connect("database.db")
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT users.username, users.profile_pic, users.email
+    FROM assignment_members
+    JOIN users
+        ON assignment_members.member_email = users.email
+    WHERE assignment_members.assignment_id = ?
+""", (assignment_id,))
+
+    members = cursor.fetchall()
+
+    conn.close()
+
+
     return render_template(
         "assignment.html",
         title=title,
@@ -631,7 +658,8 @@ def assignment(title):
         attachment=data["attachment"],
         status=status,
         logs=logs,
-        user=user_data
+        user=user_data,
+        members=members
     )
 
 
