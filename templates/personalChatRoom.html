@@ -1,17 +1,17 @@
-<!DOCTYPE html>
-<html>
-
 <head>
-    <title>Group Chat</title>
+    <title>Personal Chat</title>
+
     <link rel="stylesheet"
-          href="{{ url_for('static', filename='chat.css') }}">
+          href="{{ url_for('static', filename='personalChat.css') }}">
 </head>
 
 <body>
 
 <div class="container">
 
-    <h2>Assignment Group Chat</h2>
+    <h2>
+        Chat with {{ target_user['username'] }}
+    </h2>
 
     <div class="chat-box">
 
@@ -20,15 +20,11 @@
         <div class="message">
 
             <div class="sender">
-                {{ msg[0] }}
+                {{ msg['sender_email'] }}
             </div>
 
             <div class="content">
-                {{ msg[1] }}
-            </div>
-
-            <div class="time">
-                {{ msg[2] }}
+                {{ msg['message'] }}
             </div>
 
         </div>
@@ -37,8 +33,13 @@
 
     </div>
 
-    <form action="/send" method="POST">
+    <form action="{{ url_for('send_personal_message') }}"
+          method="POST">
 
+        <input
+            type="hidden"
+            name="receiver_email"
+            value="{{ target_user['email'] }}">
 
         <textarea
             name="message"
@@ -53,6 +54,5 @@
     </form>
 
 </div>
-
 </body>
 </html>
