@@ -254,8 +254,8 @@ def login():
 
         conn = get_db()
         user = conn.execute(
-            "SELECT * FROM users WHERE (username = ?) AND password = ?",
-            (login_input, password)
+            "SELECT * FROM users WHERE (email = ? OR username = ?) AND password = ?",
+            (login_input, login_input, password)
         ).fetchone()
         conn.close()
 
@@ -409,6 +409,7 @@ def dashboard():
         """, (user_email, user_email, selected_filter)).fetchall()
     
     today = datetime.today().date()
+    
     upcoming = []
     
     for a in assignments:
