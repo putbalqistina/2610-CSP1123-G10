@@ -5,16 +5,24 @@ import smtplib
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 import uuid
+import secrets
 
 from flask import Flask, render_template, request, redirect, session, url_for, send_from_directory
 from flask_apscheduler import APScheduler
 from werkzeug.utils import secure_filename
+from flask_mail import Mail, Message
 
 app = Flask(__name__)
 app.secret_key = "secretkey"
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.config["MAIL_SERVER"] = "smtp.gmail.com"
+app.config["MAIL_PORT"] = 587
+app.config["MAIL_USE_TLS"] = True
+app.config["MAIL_USERNAME"] = "assignmate4u@gmail.com"
+app.config["MAIL_PASSWORD"] = "mdom ybrf nwcf hcic"
 
+mail = Mail(app)
 # Ensure upload folder directory structure exists on startup
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -73,7 +81,9 @@ def init_all_tables():
             full_name TEXT,
             bio TEXT,
             gender TEXT,
-            profile_pic TEXT
+            profile_pic TEXT,
+            reset_token TEXT,
+            reset_expiry TEXT
         )
     """)
 
@@ -417,6 +427,7 @@ def dashboard():
     assignments = conn.execute(query, params).fetchall()
     
     today = datetime.today().date()
+    
     upcoming = []
     
     for a in assignments:
@@ -581,6 +592,16 @@ def assignment(title):
             "attachment": []
         }
 
+    conn = get_db()
+
+    assignment = conn.execute("""
+        SELECT id
+        FROM assignments
+        WHERE title = ?
+    """, (title,)).fetchone()
+
+    assignment_id = assignment["id"]
+
     data = assignment_store[title]
 
     if request.method == "POST":
@@ -642,7 +663,7 @@ def assignment(title):
     user_data = conn.execute(
         "SELECT * FROM users WHERE email = ? OR username = ?", 
         (user_email, user_email)
-    ).fetchone()
+    ).fetchone() 
 
     conn = get_db()
     assignment_row = conn.execute("SELECT status FROM assignments WHERE title = ?", (title,)).fetchone()
@@ -657,6 +678,23 @@ def assignment(title):
 
     status = assignment_row["status"] if assignment_row else "to_do"
 
+    conn = sqlite3.connect("database.db")
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT users.username, users.profile_pic, users.email
+    FROM assignment_members
+    JOIN users
+        ON assignment_members.member_email = users.email
+    WHERE assignment_members.assignment_id = ?
+""", (assignment_id,))
+
+    members = cursor.fetchall()
+
+    conn.close()
+
+
     return render_template(
         "assignment.html",
         title=title,
@@ -665,7 +703,8 @@ def assignment(title):
         attachment=data["attachment"],
         status=status,
         logs=logs,
-        user=user_data
+        user=user_data,
+        members=members
     )
 
 
@@ -959,6 +998,99 @@ def send_message():
     conn.close()
 
     return redirect(url_for("chat"))
+
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+
+    if request.method == "POST":
+
+        email = request.form["email"].strip().lower()
+
+        conn = get_db()
+
+        user = conn.execute(
+            "SELECT * FROM users WHERE email = ?",
+            (email,)
+        ).fetchone()
+
+        if user:
+
+            token = secrets.token_urlsafe(32)
+
+            conn.execute(
+                "UPDATE users SET reset_token = ? WHERE email = ?",
+                (token, email)
+            )
+
+            conn.commit()
+
+            reset_link = url_for(
+                "reset_password",
+                token=token,
+                _external=True
+            )
+
+            msg = Message(
+                subject="Password Reset",
+                sender=app.config["MAIL_USERNAME"],
+                recipients=[email]
+            )
+
+            msg.body = f"""
+            Hello,
+
+            You requested to reset your password.
+
+            Click the link below:
+
+            {reset_link}
+
+            If you did not request this, please ignore this email.
+            """
+
+            mail.send(msg)
+
+        conn.close()
+
+        return render_template("forgot_password.html", show_popup=True)
+
+    return render_template("forgot_password.html", show_popup=False)
+
+@app.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+
+    conn = get_db()
+
+    user = conn.execute(
+        "SELECT * FROM users WHERE reset_token = ?",
+        (token,)
+    ).fetchone()
+
+    if not user:
+        conn.close()
+        return "Invalid reset link."
+
+    if request.method == "POST":
+
+        new_password = request.form["password"]
+
+        conn.execute(
+            """
+            UPDATE users
+            SET password = ?, reset_token = NULL
+            WHERE email = ?
+            """,
+            (new_password, user["email"])
+        )
+
+        conn.commit()
+        conn.close()
+
+        return redirect(url_for("login"))
+
+    conn.close()
+
+    return render_template("reset_password.html")
 
 
 
