@@ -32,7 +32,30 @@ base_path = os.path.dirname(__file__)
 json_path = os.path.join(base_path, 'subjects.json')
 
 # --- Helper Functions ---
+@app.route("/smtp-test")
+def smtp_test():
+    try:
+        print("Connecting...")
 
+        smtp = smtplib.SMTP("smtp.gmail.com", 587, timeout=10)
+
+        print("Connected!")
+
+        smtp.ehlo()
+        smtp.starttls()
+        smtp.ehlo()
+
+        print("TLS successful!")
+
+        smtp.quit()
+
+        return "SMTP works!"
+
+    except Exception as e:
+        print(type(e))
+        print(e)
+        return str(e)
+    
 def get_db():
     conn = sqlite3.connect("database.db")
     conn.row_factory = sqlite3.Row
