@@ -69,3 +69,24 @@ button{
 button:hover{
     background:#ffe08a;
 }
+
+.user-list {
+    margin-top: 20px;
+}
+
+.user-card {
+    display: block;
+    background: white;
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+    text-decoration: none; /* buang underline */
+    color: #333; /* buang biru link */
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    transition: 0.2s;
+}
+
+.user-card:hover {
+    background: #fffbea;
+    transform: translateY(-2px);
+}

@@ -11,16 +11,16 @@
 
 <h2>Choose User</h2>
 
+<div class="user-list">
+
 {% if users %}
 
     {% for user in users %}
 
-    <div>
-        <a href="{{ url_for('personal_chat_room',
-                            email=user['email']) }}">
+        <a class="user-card"
+           href="{{ url_for('personal_chat_room', email=user['email']) }}">
             {{ user['username'] }}
         </a>
-    </div>
 
     {% endfor %}
 
@@ -29,6 +29,8 @@
     <p>No other users available.</p>
 
 {% endif %}
+
+</div>
 
 </body>
 </html>
