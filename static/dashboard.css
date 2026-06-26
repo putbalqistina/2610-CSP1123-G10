@@ -443,3 +443,44 @@ textarea {
 .alert-box {
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
+
+/* --- Hiasan untuk Search Bar di Topbar --- */
+.search-container {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.search-form {
+    display: inline-flex;
+    align-items: center;
+    background-color: #ffffff;
+    border: 1px solid #cccccc;
+    border-radius: 20px;
+    padding: 5px 15px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.search-input {
+    border: none !important;
+    outline: none; 
+    width: 350px; 
+    font-size: 14px; 
+    background: transparent; 
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+
+}
+
+.search-submit-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #555555;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+

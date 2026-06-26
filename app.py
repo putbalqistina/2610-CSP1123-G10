@@ -5,16 +5,24 @@ import smtplib
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 import uuid
+import secrets
 
 from flask import Flask, render_template, request, redirect, session, url_for, send_from_directory
 from flask_apscheduler import APScheduler
 from werkzeug.utils import secure_filename
+from flask_mail import Mail, Message
 
 app = Flask(__name__)
 app.secret_key = "secretkey"
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.config["MAIL_SERVER"] = "smtp.gmail.com"
+app.config["MAIL_PORT"] = 587
+app.config["MAIL_USE_TLS"] = True
+app.config["MAIL_USERNAME"] = "assignmate4u@gmail.com"
+app.config["MAIL_PASSWORD"] = "mdom ybrf nwcf hcic"
 
+mail = Mail(app)
 # Ensure upload folder directory structure exists on startup
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -73,7 +81,9 @@ def init_all_tables():
             full_name TEXT,
             bio TEXT,
             gender TEXT,
-            profile_pic TEXT
+            profile_pic TEXT,
+            reset_token TEXT,
+            reset_expiry TEXT
         )
     """)
 
@@ -332,7 +342,7 @@ def add_assignment():
             if not user_found:
                 error_msg = f"Error: User '{friend_input}' not registered in the system!"
                 conn.close()
-                return render_template("add_assignment.html", mmu_data=mmu_data, error_msg=error_msg)
+                return render_template("add_Assignment.html", mmu_data=mmu_data, error_msg=error_msg)
             else:
                 invited_email = user_found["email"]
 
@@ -370,7 +380,7 @@ def add_assignment():
         
         return redirect(url_for("dashboard"))
 
-    return render_template("add_assignment.html", mmu_data=mmu_data, error_msg=error_msg)
+    return render_template("add_Assignment.html", mmu_data=mmu_data, error_msg=error_msg)
 
 
 @app.route('/dashboard')
@@ -386,8 +396,9 @@ def dashboard():
     ).fetchone()
     
     selected_filter = request.args.get('subject_filter', 'All')
-    
-    # 1. KEMASKINI: Ambil senarai subjek tersendiri daripada tugasan milik sendiri ATAU tugasan kumpulan
+    search_query = request.args.get('search', '').strip()  
+
+    # 1. Ambil senarai subjek tersendiri untuk drop-down filter
     subject_rows = conn.execute("""
         SELECT DISTINCT subject FROM assignments 
         WHERE user_email = ? 
@@ -395,21 +406,28 @@ def dashboard():
     """, (user_email, user_email)).fetchall()
     user_subjects = [row['subject'] for row in subject_rows]
 
-    # 2. KEMASKINI: Ambil data assignments (Milik sendiri + Tugasan kumpulan)
-    if selected_filter == 'All' or selected_filter == '':
-        assignments = conn.execute("""
-            SELECT * FROM assignments 
-            WHERE user_email = ? 
-            OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?)
-        """, (user_email, user_email)).fetchall()
-    else:
-        assignments = conn.execute("""
-            SELECT * FROM assignments 
-            WHERE (user_email = ? OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?))
-            AND subject = ?
-        """, (user_email, user_email, selected_filter)).fetchall()
+    # 2. Bina query SQL dinamik bersama fungsi Search
+    query = """
+        SELECT * FROM assignments 
+        WHERE (user_email = ? OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?))
+    """
+    params = [user_email, user_email]
+
+    # Jika user pilih subjek tertentu di drop-down filter
+    if selected_filter != 'All' and selected_filter != '':
+        query += " AND subject = ?"
+        params.append(selected_filter)
+
+    # Jika user menaip sesuatu di search bar (Cari pada Title atau Subject)
+    if search_query:
+        query += " AND (title LIKE ? OR subject LIKE ?)"
+        params.append(f"%{search_query}%")
+        params.append(f"%{search_query}%")
+
+    assignments = conn.execute(query, params).fetchall()
     
     today = datetime.today().date()
+    
     upcoming = []
     
     for a in assignments:
@@ -422,8 +440,8 @@ def dashboard():
             pass
 
     conn.close()
-    return render_template('dashboard.html', subjects=user_subjects, assignments=assignments, upcoming=upcoming, user=user_data)
-
+    return render_template('dashboard.html', subjects=user_subjects, assignments=assignments, upcoming=upcoming, user=user_data, search_query=search_query)
+    
 @app.route('/editprofile', methods=['GET', 'POST'])
 def editprofile():
     user_identifier = session.get('user') 
@@ -529,21 +547,37 @@ def subject(code):
     if not user_email:
         return redirect(url_for('login'))
 
-
     conn = get_db()
-    assignments = conn.execute("""
-        SELECT * FROM assignments 
-        WHERE subject = ? 
-        AND (
-            user_email = ? 
-            OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?)
-        )
-    """, (code, user_email, user_email)).fetchall()
     
+    # 1. Ambil input teks dari search bar (jika ada)
+    search_query = request.args.get('search', '').strip()  
+
+    # 2. Bina query SQL dinamik - Ditambah "AND subject LIKE ?" untuk tapis subjek yang betul
+    query = """
+        SELECT * FROM assignments 
+        WHERE (user_email = ? OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?))
+        AND subject LIKE ?
+    """
+    # Guna `f"%{code}%"` supaya ia sepadan dengan format nama penuh subjek (contoh: "CMF1114 - Multimedia Fundamentals")
+    params = [user_email, user_email, f"%{code}%"]
+
+    # 3. Jika user menaip sesuatu di search bar, tapis berdasarkan Title
+    if search_query:
+        query += " AND title LIKE ?"
+        params.append(f"%{search_query}%")
+
+    assignments = conn.execute(query, params).fetchall()
+    
+    # Ambil data user untuk paparan
+    user_data = conn.execute(
+        "SELECT * FROM users WHERE email = ? OR username = ?", 
+        (user_email, user_email)
+    ).fetchone()
+
     conn.close()
-
-
-    return render_template('subject.html', code=code, assignments=assignments)
+    
+    # Hantar senarai yang telah ditapis dan search_query ke fail HTML subjek
+    return render_template('subject.html', code=code, assignments=assignments, user=user_data, search_query=search_query)
 
 @app.route('/assignment/<title>', methods=["GET", "POST"])
 def assignment(title):
@@ -558,30 +592,36 @@ def assignment(title):
             "attachment": []
         }
 
+    conn = get_db()
+
+    assignment = conn.execute("""
+        SELECT id
+        FROM assignments
+        WHERE title = ?
+    """, (title,)).fetchone()
+
+    assignment_id = assignment["id"]
+
     data = assignment_store[title]
 
     if request.method == "POST":
         new_desc = request.form.get("description")
-
         if new_desc:
             data["description"] = new_desc
-
             log_activity(
                 title,
                 f"{session['user']} updated the description."
             )
-        new_comment = request.form.get("comment")
 
+        new_comment = request.form.get("comment")
         if new_comment:
             data["comments"].append(new_comment)
-
             log_activity(
                 title,
                 f"{session['user']} added a comment."
             )
 
         file = request.files.get("file")
-
         if (
             file and
             file.filename != "" and
@@ -593,7 +633,6 @@ def assignment(title):
             path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
             file.save(path)
             data["attachment"].append(unique_filename)
-
             log_activity(
                 title,
                 f"{session['user']} uploaded '{filename}'."
@@ -616,17 +655,29 @@ def assignment(title):
         return redirect(url_for("assignment", title=title))
     
     conn = get_db()
-    assignment_row = conn.execute("SELECT status FROM assignments WHERE title = ?", (title,)).fetchone()
-    logs = conn.execute("""
-    SELECT *
-    FROM activity_logs
-    WHERE assignment_title = ?
-    ORDER BY timestamp DESC
-""", (title,)).fetchall()
     
-    conn.close()
+    # 1. Ambil data user semasa yang login
+    user_data = conn.execute("SELECT * FROM users WHERE email = ? OR username = ?", (user_email, user_email)).fetchone()
 
-    status = assignment_row["status"] if assignment_row else "to_do"
+    # 2. Ambil data assignment berdasarkan tajuk yang betul
+    assignment_row = conn.execute("SELECT * FROM assignments WHERE title = ?", (title,)).fetchone()
+    
+    status = "to_do"
+    members_data = []
+    
+    # 3.Guna ID sebenar daripada tugasan untuk cari ahli kumpulan
+    if assignment_row:
+        status = assignment_row["status"]
+        members_data = conn.execute("""
+            SELECT users.username, users.full_name, users.bio, users.profile_pic 
+            FROM assignment_members 
+            JOIN users ON assignment_members.member_email = users.email
+            WHERE assignment_members.assignment_id = ?
+        """, (assignment_row["id"],)).fetchall() 
+
+    # 4. Ambil logs bagi assignment ini
+    logs = conn.execute("SELECT * FROM activity_logs WHERE assignment_title = ? ORDER BY timestamp DESC", (title,)).fetchall()
+    conn.close()
 
     return render_template(
         "assignment.html",
@@ -635,7 +686,9 @@ def assignment(title):
         comments=data["comments"],
         attachment=data["attachment"],
         status=status,
-        logs=logs
+        logs=logs,
+        user=user_data,
+        members=members_data 
     )
 
 
@@ -929,6 +982,99 @@ def send_message():
     conn.close()
 
     return redirect(url_for("chat"))
+
+@app.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+
+    if request.method == "POST":
+
+        email = request.form["email"].strip().lower()
+
+        conn = get_db()
+
+        user = conn.execute(
+            "SELECT * FROM users WHERE email = ?",
+            (email,)
+        ).fetchone()
+
+        if user:
+
+            token = secrets.token_urlsafe(32)
+
+            conn.execute(
+                "UPDATE users SET reset_token = ? WHERE email = ?",
+                (token, email)
+            )
+
+            conn.commit()
+
+            reset_link = url_for(
+                "reset_password",
+                token=token,
+                _external=True
+            )
+
+            msg = Message(
+                subject="Password Reset",
+                sender=app.config["MAIL_USERNAME"],
+                recipients=[email]
+            )
+
+            msg.body = f"""
+            Hello,
+
+            You requested to reset your password.
+
+            Click the link below:
+
+            {reset_link}
+
+            If you did not request this, please ignore this email.
+            """
+
+            mail.send(msg)
+
+        conn.close()
+
+        return render_template("forgot_password.html", show_popup=True)
+
+    return render_template("forgot_password.html", show_popup=False)
+
+@app.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+
+    conn = get_db()
+
+    user = conn.execute(
+        "SELECT * FROM users WHERE reset_token = ?",
+        (token,)
+    ).fetchone()
+
+    if not user:
+        conn.close()
+        return "Invalid reset link."
+
+    if request.method == "POST":
+
+        new_password = request.form["password"]
+
+        conn.execute(
+            """
+            UPDATE users
+            SET password = ?, reset_token = NULL
+            WHERE email = ?
+            """,
+            (new_password, user["email"])
+        )
+
+        conn.commit()
+        conn.close()
+
+        return redirect(url_for("login"))
+
+    conn.close()
+
+    return render_template("reset_password.html")
 
 
 

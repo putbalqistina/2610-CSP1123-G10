@@ -81,21 +81,35 @@
 
     <div class="cards" >
 
-        <div class="card">
+        <div class="card" style="margin-bottom: 20px; width: 650px;height: 500px; box-sizing: border-box; display: flex; flex-direction: column;">          
             <h3>Assignment Description</h3>
-            <form method="POST">
-                <textarea name="description">{{ description }}</textarea>
-                <button type="submit" class="btn btn-save">Save</button>
-            </form>
-        </div>
-
-        <div>
+              <form method="POST">
+            <textarea name="description" style="width: 100%; box-sizing: border-box; height: 80px; resize: none; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;">{{ description }}</textarea>               <button type="submit" class="btn btn-save">Save</button>
+               </form>
+            </div>
+            
+         <div>
             <div class="card" style="margin-bottom:15px;">
                 <h3>Members</h3>
-                    
-                    <div style="margin-bottom:10px;">
-                        <button class="btn btn-save" onclick="window.location.href='/chat'" title="Group Chat">Chat</button>
+                {% for member in members %}
+                    <div onclick="openProfileModal(this)" 
+                         data-username="{{ member['username'] }}"
+                         data-fullname="{{ member['full_name'] if member['full_name'] else 'No Name Set' }}"
+                         data-bio="{{ member['bio'] if member['bio'] else 'No bio added yet.' }}"
+                         data-pic="{% if member['profile_pic'] %}{{ url_for('uploaded_file', filename=member['profile_pic']) }}{% else %}https://ui-avatars.com/api/?name={{ member['username'] }}&background=random{% endif %}"
+                         style="display:flex; align-items:center; gap:15px; margin-bottom:15px; cursor: pointer;">
+                        
+                        {% if member['profile_pic'] %}
+                            <img src="{{ url_for('uploaded_file', filename=member['profile_pic']) }}"
+                                style="width:50px; height:50px; border-radius:50%; object-fit:cover; border: 2px solid #ccc;">
+                        {% else %}
+                            <img src="https://ui-avatars.com/api/?name={{ member['username'] }}&background=random"
+                                style="width:50px; height:50px; border-radius:50%; object-fit:cover; border: 2px solid #ccc;">
+                        {% endif %}
+
+                        <strong>{{ member['username'] }}</strong>
                     </div>
+                {% endfor %}
             </div>
             <div class="card" style="margin-bottom:15px;">
                 <h3>Comments</h3>
@@ -185,8 +199,68 @@
         </div>
 
     </div>
-
 </div>
+
+
+<div id="profileModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+    <div style="background-color: white; padding: 30px; border-radius: 20px; width: 350px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.2); position: relative; font-family: sans-serif;">
+        
+        <span onclick="closeProfileModal()" style="position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #aaa;">&times;</span>
+        
+        <div style="width: 100px; height: 100px; margin: 0 auto 15px auto; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 3px solid #f3f3f3;">
+            <img id="modalPic" src="" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+        
+        <h2 id="modalUsername" style="margin: 5px 0; color: #333; font-size: 1.4rem;"></h2>
+        <p id="modalFullName" style="margin: 0; font-size: 0.9rem; color: #777;"></p>
+        
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+        
+        <div style="text-align: left; background-color: #fafafa; padding: 12px; border-radius: 10px; min-height: 60px;">
+            <strong style="font-size: 0.85rem; color: #555; display: block; margin-bottom: 5px;">Bio:</strong>
+            <p id="modalBio" style="margin: 0; font-size: 0.9rem; color: #444; font-style: italic; line-height: 1.4;"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+function openProfileModal(element) {
+    // Ambil data atribut daripada element ahli yang diklik
+    var username = element.getAttribute('data-username');
+    var fullname = element.getAttribute('data-fullname');
+    var bio = element.getAttribute('data-bio');
+    var pic = element.getAttribute('data-pic');
+
+    // Tapisan tambahan: Jika database pulangkan string "None" atau kosong, tukar kepada teks alternatif
+    if (bio === "None" || bio === "") {
+        bio = "No bio added yet.";
+    }
+    if (fullname === "None" || fullname === "") {
+        fullname = "No Name Set";
+    }
+
+    // Masukkan data ke dalam element pop-up modal
+    document.getElementById("modalUsername").innerText = "@" + username;
+    document.getElementById("modalFullName").innerText = fullname;
+    document.getElementById("modalBio").innerText = bio;
+    document.getElementById("modalPic").src = pic;
+
+    // Paparkan modal
+    document.getElementById("profileModal").style.display = "flex";
+} 
+
+function closeProfileModal() {  
+    document.getElementById("profileModal").style.display = "none";
+}
+
+// Menutup modal secara automatik jika klik di kawasan luar kotak putih
+window.onclick = function(event) {
+    var modal = document.getElementById("profileModal");
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
+</script>
 
 </body>
 </html>
