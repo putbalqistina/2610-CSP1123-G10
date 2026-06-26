@@ -342,7 +342,7 @@ def add_assignment():
             if not user_found:
                 error_msg = f"Error: User '{friend_input}' not registered in the system!"
                 conn.close()
-                return render_template("add_assignment.html", mmu_data=mmu_data, error_msg=error_msg)
+                return render_template("add_Assignment.html", mmu_data=mmu_data, error_msg=error_msg)
             else:
                 invited_email = user_found["email"]
 
@@ -380,7 +380,7 @@ def add_assignment():
         
         return redirect(url_for("dashboard"))
 
-    return render_template("add_assignment.html", mmu_data=mmu_data, error_msg=error_msg)
+    return render_template("add_Assignment.html", mmu_data=mmu_data, error_msg=error_msg)
 
 
 @app.route('/dashboard')
