@@ -21,6 +21,7 @@ app.config["MAIL_PORT"] = 587
 app.config["MAIL_USE_TLS"] = True
 app.config["MAIL_USERNAME"] = "assignmate4u@gmail.com"
 app.config["MAIL_PASSWORD"] = "mdom ybrf nwcf hcic"
+app.config["MAIL_DEFAULT_SENDER"] = "assignmate4u@gmail.com"
 
 mail = Mail(app)
 # Ensure upload folder directory structure exists on startup
@@ -1032,7 +1033,17 @@ def forgot_password():
             If you did not request this, please ignore this email.
             """
 
-            mail.send(msg)
+            print("===== About to send email =====")
+
+            try:
+                mail.send(msg)
+                print("===== Email sent successfully =====")
+
+            except Exception as e:
+                print("===== Email failed =====")
+                print(type(e))
+                print(e)
+                raise
 
         conn.close()
 
