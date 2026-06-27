@@ -96,6 +96,7 @@
                          data-username="{{ member['username'] }}"
                          data-fullname="{{ member['full_name'] if member['full_name'] else 'No Name Set' }}"
                          data-bio="{{ member['bio'] if member['bio'] else 'No bio added yet.' }}"
+                         data-gender="{{ member['gender'] if member['gender'] else 'Not specified' }}"
                          data-pic="{% if member['profile_pic'] %}{{ url_for('uploaded_file', filename=member['profile_pic']) }}{% else %}https://ui-avatars.com/api/?name={{ member['username'] }}&background=random{% endif %}"
                          style="display:flex; align-items:center; gap:15px; margin-bottom:15px; cursor: pointer;">
                         
@@ -213,7 +214,8 @@
         
         <h2 id="modalUsername" style="margin: 5px 0; color: #333; font-size: 1.4rem;"></h2>
         <p id="modalFullName" style="margin: 0; font-size: 0.9rem; color: #777;"></p>
-        
+        <p id="modalGender" style="margin: 5px 0 0 0; font-size: 0.85rem; color: #555; font-weight: 500;"></p>
+
         <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
         
         <div style="text-align: left; background-color: #fafafa; padding: 12px; border-radius: 10px; min-height: 60px;">
@@ -230,6 +232,7 @@ function openProfileModal(element) {
     var fullname = element.getAttribute('data-fullname');
     var bio = element.getAttribute('data-bio');
     var pic = element.getAttribute('data-pic');
+    var gender = element.getAttribute('data-gender');
 
     // Tapisan tambahan: Jika database pulangkan string "None" atau kosong, tukar kepada teks alternatif
     if (bio === "None" || bio === "") {
@@ -238,12 +241,18 @@ function openProfileModal(element) {
     if (fullname === "None" || fullname === "") {
         fullname = "No Name Set";
     }
+    if (gender === "None" || gender === "" || gender === null) {
+        gender = "Gender: Not specified";
+    } else {
+        gender = "Gender: " + gender;
+    }
 
     // Masukkan data ke dalam element pop-up modal
     document.getElementById("modalUsername").innerText = "@" + username;
     document.getElementById("modalFullName").innerText = fullname;
     document.getElementById("modalBio").innerText = bio;
     document.getElementById("modalPic").src = pic;
+    document.getElementById("modalGender").innerText = gender;
 
     // Paparkan modal
     document.getElementById("profileModal").style.display = "flex";

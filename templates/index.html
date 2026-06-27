@@ -32,14 +32,17 @@
             </div>
         
             <div class="input-group">
+                <label for="input-name">Full Name:</label>
                 <input type="text" name="full_name" placeholder="Name" id="input-name" value="{{ user.full_name if user else '' }}">
             </div>
 
             <div class="input-group">
+                <label for="username">Username:</label>
                 <input type="text" name="username" placeholder="Username" id="username" value="{{ user.username if user else '' }}">
             </div>
 
             <div class="input-group">
+                <label for="bio">Bio:</label>
                 <input type="text" name="bio" placeholder="Bio" value="{{ user.bio if user else '' }}">
             </div>
 
