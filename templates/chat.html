@@ -13,6 +13,10 @@
 
     <h2>Assignment Group Chat</h2>
 
+        <div class="nav-bar">
+    <a href="{{ url_for('dashboard') }}" class="exit-btn">Exit Chat</a>
+     </div>
+
     <div class="chat-box">
 
         {% for msg in messages %}
