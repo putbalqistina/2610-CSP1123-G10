@@ -23,8 +23,6 @@ app.config["MAIL_USERNAME"] = os.environ.get("MAIL_USERNAME")
 app.config["MAIL_PASSWORD"] = os.environ.get("MAIL_PASSWORD")
 app.config["MAIL_DEFAULT_SENDER"] = os.environ.get("MAIL_DEFAULT_SENDER")
 
-
-
 mail = Mail(app)
 # Ensure upload folder directory structure exists on startup
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
