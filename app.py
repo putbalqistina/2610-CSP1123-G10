@@ -462,10 +462,10 @@ def editprofile():
         file = request.files.get('profile_pic')
         filename = None
 
-        # 2. Semak jika fail wujud dan dibenarkan
-        if file and file.filename != '' and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            unique_filename = str(uuid.uuid4()) + "_" + filename
+        # 2. Semak jika fail wujud, tidak kosong dan format yang dibenarkan
+        if file and file.filename != '' and allowed_file(file.filename): 
+            filename = secure_filename(file.filename) # Gunakan secure_filename untuk elakkan masalah path traversal
+            unique_filename = str(uuid.uuid4()) + "_" + filename #Tambah UUID untuk elakkan nama fail sama 
             path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
             file.save(path) # Simpan gambar ke static/uploads
             filename = unique_filename
@@ -551,19 +551,24 @@ def subject(code):
 
     conn = get_db()
     
-    # 1. Ambil input teks dari search bar (jika ada)
+    # 1. Ambil input teks dari search bar dan filter status dari URL query parameter
     search_query = request.args.get('search', '').strip()  
+    status_filter = request.args.get('status', '').strip() 
 
-    # 2. Bina query SQL dinamik - Ditambah "AND subject LIKE ?" untuk tapis subjek yang betul
+    # 2. Bina query SQL dinamik asas
     query = """
         SELECT * FROM assignments 
         WHERE (user_email = ? OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?))
         AND subject LIKE ?
     """
-    # Guna `f"%{code}%"` supaya ia sepadan dengan format nama penuh subjek (contoh: "CMF1114 - Multimedia Fundamentals")
     params = [user_email, user_email, f"%{code}%"]
 
-    # 3. Jika user menaip sesuatu di search bar, tapis berdasarkan Title
+    # 3. Tambah penapisan status jika ada status spesifik yang dipilih (bukan kosong atau 'all')
+    if status_filter and status_filter != 'all':
+        query += " AND status = ?"
+        params.append(status_filter)
+
+    # 4. Jika user menaip sesuatu di search bar, tapis berdasarkan Title
     if search_query:
         query += " AND title LIKE ?"
         params.append(f"%{search_query}%")
@@ -578,8 +583,15 @@ def subject(code):
 
     conn.close()
     
-    # Hantar senarai yang telah ditapis dan search_query ke fail HTML subjek
-    return render_template('subject.html', code=code, assignments=assignments, user=user_data, search_query=search_query)
+    # Hantar senarai, search_query dan status_filter ke fail HTML subjek
+    return render_template(
+        'subject.html', 
+        code=code, 
+        assignments=assignments, 
+        user=user_data, 
+        search_query=search_query,
+        status_filter=status_filter
+    )
 
 @app.route('/assignment/<title>', methods=["GET", "POST"])
 def assignment(title):
@@ -671,13 +683,12 @@ def assignment(title):
     if assignment_row:
         status = assignment_row["status"]
         members_data = conn.execute("""
-            SELECT users.username, users.full_name, users.bio, users.profile_pic 
+            SELECT users.username, users.full_name, users.bio, users.profile_pic, users.gender 
             FROM assignment_members 
             JOIN users ON assignment_members.member_email = users.email
             WHERE assignment_members.assignment_id = ?
-        """, (assignment_row["id"],)).fetchall() 
+        """, (assignment_row["id"],)).fetchall()
 
-    # 4. Ambil logs bagi assignment ini
     logs = conn.execute("SELECT * FROM activity_logs WHERE assignment_title = ? ORDER BY timestamp DESC", (title,)).fetchall()
     conn.close()
 
@@ -707,13 +718,16 @@ def get_calendar_assignments():
     # 1. Ambil data tugasan
     if selected_subject == 'All' or selected_subject == '':
         rows = conn.execute(
-            "SELECT title, deadline, subject FROM assignments WHERE user_email = ?",
-            (user_email,)
+            """SELECT title, deadline, subject FROM assignments 
+               WHERE (user_email = ? OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?))""",
+            (user_email, user_email)
         ).fetchall()
     else:
         rows = conn.execute(
-            "SELECT title, deadline, subject FROM assignments WHERE user_email = ? AND subject = ?",
-            (user_email, selected_subject)
+            """SELECT title, deadline, subject FROM assignments 
+               WHERE (user_email = ? OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?)) 
+               AND subject = ?""",
+            (user_email, user_email, selected_subject)
         ).fetchall()
 
     # 2. Ambil peta warna (color map) yang telah disimpan oleh user ini
@@ -723,20 +737,23 @@ def get_calendar_assignments():
     ).fetchall()
     
     # Tukar kepada dictionary python { 'Nama Subjek': '#HEXCOLOR' }
-    user_colors = {c_row['subject']: c_row['color_code'] for c_row in color_rows}
+    user_colors = {c_row[0]: c_row[1] for c_row in color_rows}
     conn.close()
 
     events = []
     for row in rows:
-        subj = row['subject']
+        title = row[0]
+        deadline = row[1]
+        subj = row[2]
+
         # Semak jika user ada set warna sendiri, jika tiada guna warna default biru
         chosen_color = user_colors.get(subj, "#3788d8")
 
         events.append({
-            "title": f"[{subj}] {row['title']}",
-            "start": row['deadline'], 
+            "title": f"[{subj}] {title}", 
+            "start": deadline,            
             "allDay": True,
-            "color": chosen_color
+            "color": chosen_color         
         })
     
     return json.dumps(events)
@@ -780,11 +797,12 @@ def calendar_view():
     
     # Ambil senarai unik subjek yang didaftarkan oleh user ini sahaja
     subject_rows = conn.execute(
-        "SELECT DISTINCT subject FROM assignments WHERE user_email = ?", 
-        (user_email,)
+        "SELECT DISTINCT subject FROM assignments WHERE user_email = ? OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?)", 
+        (user_email, user_email)
     ).fetchall()
-    user_subjects = [row['subject'] for row in subject_rows]
+    user_subjects = [row[0] for row in subject_rows]
     conn.close()
+
     
     # Hantar senarai subjek ke frontend calendar.html
     return render_template('calendar.html', subjects=user_subjects)

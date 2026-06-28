@@ -35,23 +35,29 @@
             </div>
             
             <div style="display: flex; align-items: center; gap: 15px;">
-                <div class="nav-item dropdown">
-                    <button class="topbar-btn"><i class="fa-solid fa-filter"></i>Filter</button>
-                    <div class="dropdown-content">
-                        <form action="/dashboard" method="GET">
-                            <div class="filter-group">
-                                <label for="subject_filter">Subject</label>
-                                <select name="subject_filter" id="subject_filter">
-                                    <option value="All" {% if request.args.get('subject_filter') == 'All' or not request.args.get('subject_filter') %}selected{% endif %}>All Subjects</option>
-                                    {% for subject in subjects %}
-                                        <option value="{{ subject }}" {% if request.args.get('subject_filter') == subject %}selected{% endif %}>{{ subject }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <button type="submit" class="apply-btn">Apply Filter</button>
-                        </form>
+    <div class="filter-section">
+        <form method="GET" action="{{ url_for('subject', code=code) }}">
+            <input type="hidden" name="search" value="{{ search_query }}">
+            
+            <div class="nav-item dropdown">
+                <button type="button" class="topbar-btn"><i class="fa-solid fa-filter"></i> Filter</button>
+                
+                <div class="dropdown-content">
+                    <div class="filter-group">
+                        <label for="status_filter">Status</label>
+                        <select name="status" id="status_filter">
+                            <option value="all" {% if status_filter == 'all' or not status_filter %}selected{% endif %}>All Status</option>
+                            <option value="to_do" {% if status_filter == 'to_do' %}selected{% endif %}>To Do</option>
+                            <option value="ongoing" {% if status_filter == 'ongoing' %}selected{% endif %}>On Going</option>
+                            <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Complete</option>
+                        </select>
                     </div>
+                    <button type="submit" class="apply-btn">Apply Filter</button>
                 </div>
+            </div>
+        </form>
+    </div>
+</div>
 
                 <div class="settings-link">
                     <a href="/editprofile" class="topbar-btn"><i class="fa-solid fa-gear"></i></a>    
