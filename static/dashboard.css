@@ -484,3 +484,10 @@ textarea {
     align-items: center;
 }
 
+.chat-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px; /* jarak icon & text */
+    text-decoration: none;
+}

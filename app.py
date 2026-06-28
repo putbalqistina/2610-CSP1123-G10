@@ -13,15 +13,15 @@ from werkzeug.utils import secure_filename
 from flask_mail import Mail, Message
 
 app = Flask(__name__)
+
 app.secret_key = "secretkey"
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config["MAIL_SERVER"] = os.environ.get("MAIL_SERVER")
-app.config["MAIL_PORT"] = int(os.environ.get("MAIL_PORT"))
-app.config["MAIL_USE_TLS"] = os.environ.get("MAIL_USE_TLS") == "True"
-app.config["MAIL_USERNAME"] = os.environ.get("MAIL_USERNAME")
-app.config["MAIL_PASSWORD"] = os.environ.get("MAIL_PASSWORD")
-app.config["MAIL_DEFAULT_SENDER"] = os.environ.get("MAIL_DEFAULT_SENDER")
+app.config["MAIL_SERVER"] = "smtp.gmail.com"
+app.config["MAIL_PORT"] = 587
+app.config["MAIL_USE_TLS"] = True
+app.config["MAIL_USERNAME"] = "assignmate4u@gmail.com"
+app.config["MAIL_PASSWORD"] = "mdom ybrf nwcf hcic"
 
 mail = Mail(app)
 # Ensure upload folder directory structure exists on startup
