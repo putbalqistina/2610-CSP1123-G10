@@ -35,29 +35,28 @@
             </div>
             
             <div style="display: flex; align-items: center; gap: 15px;">
-    <div class="filter-section">
-        <form method="GET" action="{{ url_for('subject', code=code) }}">
-            <input type="hidden" name="search" value="{{ search_query }}">
-            
-            <div class="nav-item dropdown">
-                <button type="button" class="topbar-btn"><i class="fa-solid fa-filter"></i> Filter</button>
-                
-                <div class="dropdown-content">
-                    <div class="filter-group">
-                        <label for="status_filter">Status</label>
-                        <select name="status" id="status_filter">
-                            <option value="all" {% if status_filter == 'all' or not status_filter %}selected{% endif %}>All Status</option>
-                            <option value="to_do" {% if status_filter == 'to_do' %}selected{% endif %}>To Do</option>
-                            <option value="ongoing" {% if status_filter == 'ongoing' %}selected{% endif %}>On Going</option>
-                            <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Complete</option>
-                        </select>
-                    </div>
-                    <button type="submit" class="apply-btn">Apply Filter</button>
+                <div class="filter-section">
+                    <form method="GET" action="{{ url_for('subject', code=code) }}">
+                        <input type="hidden" name="search" value="{{ search_query }}">
+                        
+                        <div class="nav-item dropdown">
+                            <button type="button" class="topbar-btn"><i class="fa-solid fa-filter"></i> Filter</button>
+                            
+                            <div class="dropdown-content">
+                                <div class="filter-group">
+                                    <label for="status_filter">Status</label>
+                                    <select name="status" id="status_filter">
+                                        <option value="all" {% if status_filter == 'all' or not status_filter %}selected{% endif %}>All Status</option>
+                                        <option value="to_do" {% if status_filter == 'to_do' %}selected{% endif %}>To Do</option>
+                                        <option value="ongoing" {% if status_filter == 'ongoing' %}selected{% endif %}>On Going</option>
+                                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Complete</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="apply-btn">Apply Filter</button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
-            </div>
-        </form>
-    </div>
-</div>
 
                 <div class="settings-link">
                     <a href="/editprofile" class="topbar-btn"><i class="fa-solid fa-gear"></i></a>    
@@ -79,21 +78,30 @@
             </div>
         </div>
 
-        <h1>{{ code }} Assignments</h1>
+        <h1>{{ code }} </h1>
 
         <div class="cards">
-            {% for assignment in assignments %}
-                <a href="{{ url_for('assignment', title=assignment['title']) }}">
-                    <div class="card">
-                        {{ assignment['title'] }}
-                        <div class="due-date"></div>
-                        <strong>Due Date:</strong> {{ assignment['deadline'] }}
-                    </div>
-                </a>
-            {% else %}
-                <p class="no-data" style="grid-column: 1 / -1; color: #777; font-style: italic;">No assignments found match your search query.</p>
-            {% endfor %}
+    {% for assignment in assignments %}
+        <div class="card-container" style="position: relative; display: block;">
+            
+             <a href="{{ url_for('assignment', id=assignment['id']) }}" style="text-decoration: none; color: inherit; display: block;">                <div class="card" style="padding-bottom: 45px; position: relative;">
+                    {{ assignment['title'] }}
+                    <div class="due-date"></div>
+                    <strong>Due Date:</strong> {{ assignment['deadline'] }}
+                </div>
+            </a>
+            
+            <form action="{{ url_for('delete_assignment', id=assignment['id']) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete the assignment \'{{ assignment['title'] }}\'?');" style="position: absolute; bottom: 15px; right: 15px; z-index: 10;">
+                <button type="submit" class="btn-delete-card" title="Delete Assignment">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </form>
+
         </div>
+    {% else %}
+        <p class="no-data" style="grid-column: 1 / -1; color: #777; font-style: italic;">No assignments found match your search query.</p>
+    {% endfor %}
+</div>
 
     </div>
 

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AssignMate | Add New Member</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style-add_assignment.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="container">
+        <main>
+            <h1>ADD NEW MEMBER</h1>
+            
+            {% if error_msg %}
+                <div style="background-color: #ffe6e6; color: #cc0000; padding: 10px; border-radius: 5px; margin-bottom: 15px; font-weight: bold; border: 1px solid #cc0000;">
+                    {{ error_msg }}
+                </div>
+            {% endif %}
+
+            <form class="assignment-form" action="/add_NewMember" method="POST">
+                
+                <input type="hidden" name="assignment_id" value="{{ assignment_id }}">
+
+                <div class="input-group" style="margin-bottom: 20px;">
+                    <label for="friend_input" style="display: block; font-weight: 600; margin-bottom: 8px;">Friend's Email*</label>
+                    
+                    <input type="email" id="friend_input" name="email" placeholder="example@email.com" required 
+                           style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box;">
+                </div>
+
+                <div class="button-group">
+                    <button type="button" class="btn-cancel" onclick="window.location.href='/dashboard'">CANCEL</button>
+                    <button type="submit" class="btn-add">ADD MEMBER</button>
+                </div>
+            </form>
+        </main>
+    </div>
+
+</body>
+</html>
