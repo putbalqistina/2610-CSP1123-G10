@@ -11,29 +11,19 @@ from flask import Flask, render_template, request, redirect, session, url_for, s
 from flask_apscheduler import APScheduler
 from werkzeug.utils import secure_filename
 from flask_mail import Mail, Message
-
+from dotenv import load_dotenv
+load_dotenv()
 app = Flask(__name__)
 
 app.secret_key = "secretkey"
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config["MAIL_SERVER"] = os.environ.get("MAIL_SERVER")
-app.config["MAIL_PORT"] = int(os.environ.get("MAIL_PORT"))
-app.config["MAIL_USE_TLS"] = True
-app.config["MAIL_USE_SSL"] = False
-app.config["MAIL_USERNAME"] = os.environ.get("MAIL_USERNAME")
-app.config["MAIL_PASSWORD"] = os.environ.get("MAIL_PASSWORD")
-app.config["MAIL_DEFAULT_SENDER"] = os.environ.get("MAIL_DEFAULT_SENDER")
-app.config["MAIL_TIMEOUT"] = 20
+
+
 
 mail = Mail(app)
 
-print("MAIL_SERVER =", app.config["MAIL_SERVER"])
-print("MAIL_PORT =", app.config["MAIL_PORT"])
-print("MAIL_TLS =", app.config["MAIL_USE_TLS"])
-print("MAIL_SSL =", app.config.get("MAIL_USE_SSL"))
-print("MAIL_USERNAME =", app.config["MAIL_USERNAME"])
-print("MAIL_DEFAULT_SENDER =", app.config["MAIL_DEFAULT_SENDER"])
+
 # Ensure upload folder directory structure exists on startup
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
