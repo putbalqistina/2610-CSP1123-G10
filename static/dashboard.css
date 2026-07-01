@@ -470,69 +470,22 @@ textarea {
 }
 
 /* --- Hiasan untuk Search Bar di Topbar --- */
-.search-container {
-    flex-grow: 1;
-    display: flex;
-    justify-content: center;
+.assignment-layout{
+    display:flex;
+    gap:20px;
+    align-items:flex-start;
 }
 
-.search-form {
-    display: inline-flex;
-    align-items: center;
-    background-color: #ffffff;
-    border: 1px solid #cccccc;
-    border-radius: 20px;
-    padding: 5px 15px;
-    width: 100%;
-    max-width: 400px;
-}
-
-.search-input {
-    border: none !important;
-    outline: none; 
-    width: 350px; 
-    font-size: 14px; 
-    background: transparent; 
-    padding: 12px 16px;
-    border-radius: 12px;
-    border: 1px solid #ddd;
-
-}
-
-.search-submit-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: #555555;
-    padding: 0;
-    display: flex;
-    align-items: center;
-}
-
-.chat-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px; /* jarak icon & text */
-    text-decoration: none;
-}
-
-.left-column{
+.left-side{
     width:650px;
     display:flex;
     flex-direction:column;
     gap:15px;
 }
 
-.right-column{
+.right-side{
     flex:1;
     display:flex;
     flex-direction:column;
     gap:15px;
-}
-
-.cards{
-    display:flex;
-    align-items:flex-start;
-    gap:20px;
 }
