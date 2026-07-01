@@ -109,6 +109,31 @@ h1 {
     transform: translateY(-4px);
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
+/* Assignment Description */
+.assignment-description{
+    display: flex;
+    flex-direction: column;
+}
+
+.assignment-description h3{
+    margin: 0 0 12px;
+}
+
+.assignment-description form{
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.assignment-description textarea{
+    flex: 1;
+    min-height: 0;
+    margin-bottom: 12px;
+}
+
+.assignment-description button{
+    align-self: flex-start;
+}
 
 textarea {
     width: 100%;
@@ -490,4 +515,24 @@ textarea {
     justify-content: center;
     gap: 8px; /* jarak icon & text */
     text-decoration: none;
+}
+
+.left-column{
+    width:650px;
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+}
+
+.right-column{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:15px;
+}
+
+.cards{
+    display:flex;
+    align-items:flex-start;
+    gap:20px;
 }
