@@ -1014,24 +1014,20 @@ def send_message():
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
-        email = request.form.get('username') # Using 'username' matching your login UI if email is used as login
+        # 1. FIXED: Changed 'username' to 'email' to match your HTML form input name
+        email = request.form.get('email') 
         
-        # Connect to your SQLite database
-        conn = sqlite3.connect('database.db') # Update with your actual DB name/path
+        conn = sqlite3.connect('database.db')  # Update with your actual DB path
         cursor = conn.cursor()
         
-        # Check if the user exists
         cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
         user = cursor.fetchone()
         
         if user:
             user_id = user[0]
-            # Generate a secure, unique token using secrets (which you already imported)
             token = secrets.token_urlsafe(32)
-            # Set token expiration time (e.g., 30 minutes from now)
             expires_at = (datetime.now() + timedelta(minutes=30)).strftime('%Y-%m-%d %H:%M:%S')
             
-            # CRITICAL: Make sure your database users table has 'reset_token' and 'token_expires' columns!
             cursor.execute("""
                 UPDATE users 
                 SET reset_token = ?, token_expires = ? 
@@ -1039,47 +1035,36 @@ def forgot_password():
             """, (token, expires_at, user_id))
             conn.commit()
             
-            # Construct the reset absolute URL
-            # Note: Replace '_external=True' for absolute URLs across emails
             reset_url = url_for('reset_password', token=token, _external=True)
             
-            # Build and send the email via Flask-Mail & Brevo
             msg = Message(
                 subject="Password Reset Request - AssignMate",
                 recipients=[email]
-                # MAIL_DEFAULT_SENDER handles the sender automatically
             )
-            
-            msg.body = f"Hello,\n\nTo reset your password, please click on the following link:\n{reset_url}\n\nIf you did not make this request, simply ignore this email."
-            
-            # Optional HTML styling matching your warm layout palette
-            msg.html = render_template('emails/reset_email.html', reset_url=reset_url)
+            msg.body = f"Hello,\n\nTo reset your password, please click on the following link:\n{reset_url}\n\nIf you did not make this request, ignore this email."
             
             try:
                 mail.send(msg)
             except Exception as e:
                 print(f"Error sending email: {e}")
-                # Log error or alert user
                 
         conn.close()
         
-        # Security Best Practice: Flash the same message whether the email exists or not 
-        # to prevent malicious user enumeration.
-        flash("If that email address exists in our system, a reset link has been sent.", "info")
-        return redirect(url_for('forgot_password'))
+        # 2. FIXED: Instead of redirecting, render the template directly 
+        # and pass show_popup=True so the success modal displays!
+        return render_template('forgot_password.html', show_popup=True)
         
-    return render_template('forgot_password.html')
-
+    return render_template('forgot_password.html', show_popup=False)
 
 # -------------------------------------------------------------
 # 2. VERIFY TOKEN AND RESET PASSWORD ROUTE
 # -------------------------------------------------------------
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect('database.db')  # Update with your actual DB path
     cursor = conn.cursor()
     
-    # Locate user by token and ensure token hasn't expired yet
+    # 1. Check if the token is valid and not expired
     now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     cursor.execute("""
         SELECT id FROM users 
@@ -1089,23 +1074,21 @@ def reset_password(token):
     
     if not user:
         conn.close()
-        flash("The password reset token is invalid or has expired.", "danger")
-        return redirect(url_for('forgot_password'))
+        # Token is either dead or typed wrong
+        return "The password reset token is invalid or has expired.", 400
         
     if request.method == 'POST':
+        # Grab only the single password field matching your HTML input name="password"
         new_password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
         
-        if new_password != confirm_password:
-            flash("Passwords do not match.", "danger")
-            conn.close()
-            return render_template('reset_password.html', token=token)
+        if not new_password:
+            return "Password field cannot be empty.", 400
             
-        # Securely hash the password before saving
+        # Securely hash the new password
         hashed_password = generate_password_hash(new_password)
         user_id = user[0]
         
-        # Update user's password and clear token fields so they can't reuse it
+        # 2. Update password and clear the token data completely
         cursor.execute("""
             UPDATE users 
             SET password = ?, reset_token = NULL, token_expires = NULL 
@@ -1114,8 +1097,8 @@ def reset_password(token):
         conn.commit()
         conn.close()
         
-        flash("Your password has been successfully updated! You can now log in.", "success")
-        return redirect(url_for('forgot_password')) # Or redirect straight to login
+        # Redirect back to your main login page
+        return redirect(url_for('login')) 
         
     conn.close()
     return render_template('reset_password.html', token=token)
