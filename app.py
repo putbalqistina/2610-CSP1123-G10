@@ -611,7 +611,7 @@ def assignment(id):
         
     title = assignment_row["title"]
 
-    # 👍 TUKAR DI SINI: Guna ID sebagai key unik tugasan dalam memori store
+    # TUKAR DI SINI: Guna ID sebagai key unik tugasan dalam memori store
     assignment_id_str = str(id)
     if assignment_id_str not in assignment_store:
         assignment_store[assignment_id_str] = {
