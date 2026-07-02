@@ -1,0 +1,20 @@
+.add-btn {
+    background-color: #28a745; 
+    color: white;
+    border: none;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card {
+    position: relative; 
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+}

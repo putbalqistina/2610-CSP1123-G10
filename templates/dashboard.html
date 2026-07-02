@@ -130,26 +130,35 @@
     <h2 style="margin: 0; font-weight: bold;">{{ user.username }}'s Dashboard</h2>
 </div>
 
-        <div class="cards-container">
-            <div class="cards">
-                {% if assignments %}
-                    {% set displayed = [] %}
-                    {% for item in assignments %}
-                        {% if item.subject not in displayed %}
-                            <a href="{{ url_for('subject', code=item.subject) }}" class="card-link">
-                                <div class="card">
-                                    <span class="subject-tag">{{ item.subject }}</span>
-                                </div>
-                            </a>
-                            {% if displayed.append(item.subject) %}{% endif %}
-                        {% endif %}
-                    {% endfor %}
-                {% else %}
-                    <p class="no-data">No active assignments or subjects found for this filter.</p>
-                {% endif %}
-            </div>
-        </div>
+        <div class="cards">
+    {% if assignments %}
+        {% set displayed = [] %}
+        {% for item in assignments %}
+            {% if item.subject not in displayed %}
+                
+                <div class="card-subject-wrapper" style="position: relative; display: inline-block; margin: 10px;">
+                    
+                    <a href="{{ url_for('subject', code=item.subject) }}" class="card-link" style="text-decoration: none; color: inherit; display: block;">
+                        <div class="card" style="padding-bottom: 40px; min-width: 150px; min-height: 100px; position: relative;">
+                            <span class="subject-tag">{{ item.subject }}</span>
+                        </div>
+                    </a>
+                    
+                    <form action="{{ url_for('delete_subject', code=item.subject) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete the subject {{ item.subject }} together with all the assignments?');" style="position: absolute; bottom: 10px; right: 10px; z-index: 10;">
+                        <button type="submit" class="btn-delete-card" title="Delete Subject">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </form>
 
+                </div>
+
+                {% if displayed.append(item.subject) %}{% endif %}
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        <p class="no-data">No active assignments or subjects found for this filter.</p>
+    {% endif %}
+</div>
     </div>
 
 

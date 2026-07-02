@@ -418,19 +418,23 @@ def dashboard():
     """, (user_email, user_email)).fetchall()
     user_subjects = [row['subject'] for row in subject_rows]
 
-    # 2. Bina query SQL dinamik bersama fungsi Search
+    # Ambil tarikh hari ini dalam format YYYY-MM-DD
+    today_str = datetime.today().strftime('%Y-%m-%d')
+
+    # 2. Bina query SQL dinamik bersama fungsi Search & Tapis Tarikh Belum Lepas
     query = """
         SELECT * FROM assignments 
         WHERE (user_email = ? OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?))
+        AND deadline >= ?
     """
-    params = [user_email, user_email]
+    params = [user_email, user_email, today_str]
 
     # Jika user pilih subjek tertentu di drop-down filter
     if selected_filter != 'All' and selected_filter != '':
         query += " AND subject = ?"
         params.append(selected_filter)
 
-    # Jika user menaip sesuatu di search bar (Cari pada Title atau Subject)
+    # Jika user menaip sesuatu di search bar
     if search_query:
         query += " AND (title LIKE ? OR subject LIKE ?)"
         params.append(f"%{search_query}%")
@@ -439,7 +443,6 @@ def dashboard():
     assignments = conn.execute(query, params).fetchall()
     
     today = datetime.today().date()
-    
     upcoming = []
     
     for a in assignments:
@@ -561,31 +564,31 @@ def subject(code):
 
     conn = get_db()
     
-    # 1. Ambil input teks dari search bar dan filter status dari URL query parameter
     search_query = request.args.get('search', '').strip()  
     status_filter = request.args.get('status', '').strip() 
+    
+    # Ambil tarikh hari ini
+    today_str = datetime.today().strftime('%Y-%m-%d')
 
-    # 2. Bina query SQL dinamik asas
+    # Bina query SQL yang menapis deadline >= hari ini
     query = """
         SELECT * FROM assignments 
         WHERE (user_email = ? OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?))
         AND subject LIKE ?
+        AND deadline >= ?
     """
-    params = [user_email, user_email, f"%{code}%"]
+    params = [user_email, user_email, f"%{code}%", today_str]
 
-    # 3. Tambah penapisan status jika ada status spesifik yang dipilih (bukan kosong atau 'all')
     if status_filter and status_filter != 'all':
         query += " AND status = ?"
         params.append(status_filter)
 
-    # 4. Jika user menaip sesuatu di search bar, tapis berdasarkan Title
     if search_query:
         query += " AND title LIKE ?"
         params.append(f"%{search_query}%")
 
     assignments = conn.execute(query, params).fetchall()
     
-    # Ambil data user untuk paparan
     user_data = conn.execute(
         "SELECT * FROM users WHERE email = ? OR username = ?", 
         (user_email, user_email)
@@ -593,7 +596,6 @@ def subject(code):
 
     conn.close()
     
-    # Hantar senarai, search_query dan status_filter ke fail HTML subjek
     return render_template(
         'subject.html', 
         code=code, 
@@ -603,101 +605,71 @@ def subject(code):
         status_filter=status_filter
     )
 
-@app.route('/assignment/<title>', methods=["GET", "POST"])
-def assignment(title):
+@app.route('/assignment/<int:id>', methods=["GET", "POST"])
+def assignment(id):
     user_email = session.get("user")
     if not user_email:
         return redirect(url_for("login"))
     
-    if title not in assignment_store:
-        assignment_store[title] = {
+    conn = get_db()
+    assignment_row = conn.execute("SELECT * FROM assignments WHERE id = ?", (id,)).fetchone()
+    
+    if not assignment_row:
+        conn.close()
+        return "Assignment not found", 404
+        
+    title = assignment_row["title"]
+
+    # TUKAR DI SINI: Guna ID sebagai key unik tugasan dalam memori store
+    assignment_id_str = str(id)
+    if assignment_id_str not in assignment_store:
+        assignment_store[assignment_id_str] = {
             "description": "",
             "comments": [],
             "attachment": []
         }
-
-    conn = get_db()
-
-    assignment = conn.execute("""
-        SELECT id
-        FROM assignments
-        WHERE title = ?
-    """, (title,)).fetchone()
-
-    assignment_id = assignment["id"]
-
-    data = assignment_store[title]
+    data = assignment_store[assignment_id_str]
 
     if request.method == "POST":
         new_desc = request.form.get("description")
         if new_desc:
             data["description"] = new_desc
-            log_activity(
-                title,
-                f"{session['user']} updated the description."
-            )
+            log_activity(title, f"{session['user']} updated the description.")
 
         new_comment = request.form.get("comment")
         if new_comment:
             data["comments"].append(new_comment)
-            log_activity(
-                title,
-                f"{session['user']} added a comment."
-            )
+            log_activity(title, f"{session['user']} added a comment.")
 
         file = request.files.get("file")
-        if (
-            file and
-            file.filename != "" and
-            len(data["attachment"]) < 3 and 
-            allowed_file(file.filename)
-        ):
+        if (file and file.filename != "" and len(data["attachment"]) < 3 and allowed_file(file.filename)):
             filename = secure_filename(file.filename)
             unique_filename = str(uuid.uuid4()) + "_" + filename
             path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
             file.save(path)
             data["attachment"].append(unique_filename)
-            log_activity(
-                title,
-                f"{session['user']} uploaded '{filename}'."
-            )
+            log_activity(title, f"{session['user']} uploaded '{filename}'.")
 
         status = request.form.get("status")
-        log_activity(
-            title,
-            f"{session['user']} changed the status to '{status}'."
-        )
-        conn = get_db()
+        log_activity(title, f"{session['user']} changed the status to '{status}'.")
+        
         conn.execute("""
             UPDATE assignments 
             SET status = ?
-            WHERE title = ?
-        """, (status, title))
+            WHERE id = ?
+        """, (status, id))
         conn.commit()
-        conn.close()
         
-        return redirect(url_for("assignment", title=title))
+        return redirect(url_for("assignment", id=id))
     
-    conn = get_db()
-    
-    # 1. Ambil data user semasa yang login
-    user_data = conn.execute("SELECT * FROM users WHERE email = ? OR username = ?", (user_email, user_email)).fetchone()
+    user_data = conn.execute("SELECT * FROM users WHERE email = ?", (user_email,)).fetchone()
 
-    # 2. Ambil data assignment berdasarkan tajuk yang betul
-    assignment_row = conn.execute("SELECT * FROM assignments WHERE title = ?", (title,)).fetchone()
-    
-    status = "to_do"
-    members_data = []
-    
-    # 3.Guna ID sebenar daripada tugasan untuk cari ahli kumpulan
-    if assignment_row:
-        status = assignment_row["status"]
-        members_data = conn.execute("""
-            SELECT users.username, users.full_name, users.bio, users.profile_pic, users.gender 
-            FROM assignment_members 
-            JOIN users ON assignment_members.member_email = users.email
-            WHERE assignment_members.assignment_id = ?
-        """, (assignment_row["id"],)).fetchall()
+    members_data = conn.execute("""
+        SELECT users.username, users.full_name, users.bio, users.profile_pic, users.gender 
+        FROM assignment_members 
+        JOIN users ON assignment_members.member_email = users.email
+        WHERE assignment_members.assignment_id = ?
+    """, (id,)).fetchall()
 
     logs = conn.execute("SELECT * FROM activity_logs WHERE assignment_title = ? ORDER BY timestamp DESC", (title,)).fetchall()
     conn.close()
@@ -708,12 +680,12 @@ def assignment(title):
         description=data["description"],
         comments=data["comments"],
         attachment=data["attachment"],
-        status=status,
+        status=assignment_row["status"],
         logs=logs,
         user=user_data,
-        members=members_data 
+        members=members_data,
+        assignment=assignment_row 
     )
-
 
 @app.route('/api/assignments')
 def get_calendar_assignments():
@@ -1123,7 +1095,106 @@ def reset_password(token):
         return redirect(url_for('login')) 
         
     conn.close()
+
     return render_template('reset_password.html', token=token)
+
+
+@app.route('/add_NewMember', methods=['GET', 'POST'])
+def add_NewMember():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    user_email = session['user']
+    
+    # 1. Ambil assignment_id secara dinamik daripada URL (GET) atau Form (POST)
+    assignment_id = request.args.get('assignment_id') or request.form.get('assignment_id')
+
+    if request.method == 'POST':
+        invited_email = request.form.get('email') # Guna 'email' untuk sepadan dengan borang HTML
+
+        conn = get_db()
+        cursor = conn.cursor()
+
+        # 2. Semak jika emel yang dijemput wujud dalam sistem
+        cursor.execute("SELECT email FROM users WHERE email = ?", (invited_email,))
+        invited_user = cursor.fetchone()
+
+        if not invited_user:
+            conn.close()
+            return render_template('add_NewMember.html', error_msg="The email entered is not registered in AssignMate.", assignment_id=assignment_id)
+
+        # 3. Pastikan context assignment_id tidak kosong
+        if not assignment_id:
+            conn.close()
+            return render_template('add_NewMember.html', error_msg="Error: No specific assignment/subject was targeted.", assignment_id=assignment_id)
+
+        # 4. Masukkan ahli baru ke dalam jadual 'assignment_members' KHAS untuk ID ini sahaja
+        try:
+            cursor.execute(
+                "INSERT INTO assignment_members (assignment_id, member_email) VALUES (?, ?)",
+                (assignment_id, invited_email)
+            )
+            conn.commit()
+        except sqlite3.IntegrityError:
+            conn.close()
+            return render_template('add_NewMember.html', error_msg="The member you are trying to add is already in this assignment.", assignment_id=assignment_id)
+
+        conn.close()
+        
+        # Selesai tambah, hantar pengguna kembali ke dashboard utama
+        return redirect(url_for('dashboard'))
+
+    # Jika akses biasa (GET), hantar nilai assignment_id ke template borang
+    return render_template('add_NewMember.html', assignment_id=assignment_id)
+
+
+
+@app.route('/delete_assignment/<int:id>', methods=['POST'])
+def delete_assignment(id):
+    if 'user' not in session:
+        return redirect(url_for('login'))
+        
+    conn = get_db()
+    # Pilihan: Padam dahulu rekod berkaitan di table 'assignment_members' dan 'messages' jika ada
+    conn.execute("DELETE FROM assignment_members WHERE assignment_id = ?", (id,))
+    conn.execute("DELETE FROM messages WHERE assignment_id = ?", (id,))
+    
+    # Padam tugasan utama
+    conn.execute("DELETE FROM assignments WHERE id = ?", (id,))
+    conn.commit()
+    conn.close()
+    
+    return redirect(request.referrer or url_for('dashboard'))
+
+@app.route('/delete_subject/<code>', methods=['POST'])
+def delete_subject(code):
+    user_email = session.get('user')
+    if not user_email:
+        return redirect(url_for('login'))
+        
+    conn = get_db()
+    
+    # Cari semua assignment id di bawah subjek ini milik user
+    assignments = conn.execute(
+        "SELECT id FROM assignments WHERE subject = ? AND user_email = ?", 
+        (code, user_email)
+    ).fetchall()
+    
+    for a in assignments:
+        conn.execute("DELETE FROM assignment_members WHERE assignment_id = ?", (a['id'],))
+        conn.execute("DELETE FROM messages WHERE assignment_id = ?", (a['id'],))
+        
+    # Padam semua tugasan di bawah subjek tersebut
+    conn.execute("DELETE FROM assignments WHERE subject = ? AND user_email = ?", (code, user_email))
+    
+    # Pilihan: Padam warna subjek jika ada
+    conn.execute("DELETE FROM subject_colors WHERE subject = ? AND user_email = ?", (code, user_email))
+    
+    conn.commit()
+    conn.close()
+    
+    return redirect(url_for('dashboard'))
+
 
 
 if __name__ == '__main__':
