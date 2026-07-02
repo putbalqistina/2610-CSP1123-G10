@@ -2,6 +2,7 @@ import os
 import sqlite3
 import json
 import smtplib
+import requests
 from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 import uuid
@@ -1014,10 +1015,9 @@ def send_message():
 @app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
-        # 1. FIXED: Changed 'username' to 'email' to match your HTML form input name
         email = request.form.get('email') 
         
-        conn = sqlite3.connect('database.db')  # Update with your actual DB path
+        conn = sqlite3.connect('database.db')
         cursor = conn.cursor()
         
         cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
@@ -1037,21 +1037,42 @@ def forgot_password():
             
             reset_url = url_for('reset_password', token=token, _external=True)
             
-            msg = Message(
-                subject="Password Reset Request - AssignMate",
-                recipients=[email]
-            )
-            msg.body = f"Hello,\n\nTo reset your password, please click on the following link:\n{reset_url}\n\nIf you did not make this request, ignore this email."
+            # --- BYPASS FLASK-MAIL AND USE BREVO HTTP API ---
+            url = "https://api.brevo.com/v3/smtp/email"
+            
+            # Make sure BREVO_API_KEY is defined in your Render Environment Variables 
+            # and starts with 'xkeysib-'
+            headers = {
+                "accept": "application/json",
+                "api-key": os.getenv("BREVO_API_KEY"),
+                "content-type": "application/json"
+            }
+            
+            payload = {
+                "sender": {
+                    "name": "AssignMate",
+                    "email": os.getenv("MAIL_DEFAULT_SENDER")  # Must be your verified Brevo sender email
+                },
+                "to": [
+                    {
+                        "email": email
+                    }
+                ],
+                "subject": "Password Reset Request - AssignMate",
+                "textContent": f"Hello,\n\nTo reset your password, please click on the following link:\n{reset_url}\n\nIf you did not make this request, ignore this email."
+            }
             
             try:
-                mail.send(msg)
+                response = requests.post(url, json=payload, headers=headers)
+                # If Brevo accepts it, it returns a 201 Created status
+                if response.status_code != 201:
+                    print(f"Brevo API Error: {response.text}")
             except Exception as e:
-                print(f"Error sending email: {e}")
+                print(f"Failed to connect to Brevo API: {e}")
                 
         conn.close()
         
-        # 2. FIXED: Instead of redirecting, render the template directly 
-        # and pass show_popup=True so the success modal displays!
+        # Keep showing your popup modal
         return render_template('forgot_password.html', show_popup=True)
         
     return render_template('forgot_password.html', show_popup=False)
