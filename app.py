@@ -14,6 +14,7 @@ from werkzeug.utils import secure_filename
 from flask_mail import Mail, Message
 from flask import render_template, request, redirect, url_for, flash
 from werkzeug.security import generate_password_hash
+from werkzeug.security import check_password_hash
 from dotenv import load_dotenv
 load_dotenv()
 app = Flask(__name__)
@@ -275,13 +276,15 @@ def login():
         password = request.form["password"]
 
         conn = get_db()
+        # 1. Look up the user strictly by email or username first
         user = conn.execute(
-            "SELECT * FROM users WHERE (email = ? OR username = ?) AND password = ?",
-            (login_input, login_input, password)
+            "SELECT * FROM users WHERE email = ? OR username = ?",
+            (login_input, login_input)
         ).fetchone()
         conn.close()
 
-        if user:
+        # 2. If the user exists, pass their stored hash and the typed password into the verifier
+        if user and check_password_hash(user["password"], password):
             session["user"] = user["email"]
             return redirect(url_for("dashboard"))
         else:
