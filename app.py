@@ -12,8 +12,9 @@ from flask_apscheduler import APScheduler
 from werkzeug.utils import secure_filename
 from flask_mail import Mail, Message
 from dotenv import load_dotenv
-load_dotenv()
+
 app = Flask(__name__)
+load_dotenv()
 
 app.secret_key = "secretkey"
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
