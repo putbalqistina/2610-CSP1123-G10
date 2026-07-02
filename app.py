@@ -310,10 +310,8 @@ def register():
             conn.close()
             return render_template("register.html", error="Email or Username already registered!")
 
-        conn.execute(
-            "INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
-            (username, email, password)
-        )
+        hashed_password = generate_password_hash(password)
+        conn.execute("INSERT INTO users (username, email, password) VALUES (?, ?, ?)", (username, email, hashed_password))
         conn.commit()
         conn.close()
 

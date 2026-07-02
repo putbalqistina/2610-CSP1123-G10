@@ -79,40 +79,46 @@
 
     <h1>{{ title }}</h1>
 
-    <div class="cards" >
+    <div class="assignment-layout" >
 
-        <div class="card" style="margin-bottom: 20px; width: 650px;height: 500px; box-sizing: border-box; display: flex; flex-direction: column;">          
+     <div class="left-side">
+        <div class="card">
             <h3>Assignment Description</h3>
-              <form method="POST">
-            <textarea name="description" style="width: 100%; box-sizing: border-box; height: 80px; resize: none; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;">{{ description }}</textarea>               <button type="submit" class="btn btn-save">Save</button>
-               </form>
-            </div>
-            
-         <div>
-            <div class="card" style="margin-bottom:15px;">
-                <h3>Members</h3>
-                {% for member in members %}
-                    <div onclick="openProfileModal(this)" 
-                         data-username="{{ member['username'] }}"
-                         data-fullname="{{ member['full_name'] if member['full_name'] else 'No Name Set' }}"
-                         data-bio="{{ member['bio'] if member['bio'] else 'No bio added yet.' }}"
-                         data-gender="{{ member['gender'] if member['gender'] else 'Not specified' }}"
-                         data-pic="{% if member['profile_pic'] %}{{ url_for('uploaded_file', filename=member['profile_pic']) }}{% else %}https://ui-avatars.com/api/?name={{ member['username'] }}&background=random{% endif %}"
-                         style="display:flex; align-items:center; gap:15px; margin-bottom:15px; cursor: pointer;">
-                        
-                        {% if member['profile_pic'] %}
-                            <img src="{{ url_for('uploaded_file', filename=member['profile_pic']) }}"
-                                style="width:50px; height:50px; border-radius:50%; object-fit:cover; border: 2px solid #ccc;">
-                        {% else %}
-                            <img src="https://ui-avatars.com/api/?name={{ member['username'] }}&background=random"
-                                style="width:50px; height:50px; border-radius:50%; object-fit:cover; border: 2px solid #ccc;">
-                        {% endif %}
+            <form method="POST">
+                <textarea name="description" style="width: 100%; box-sizing: border-box; height: 80px; resize: none; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;">{{ description }}</textarea>
+                <button type="submit" class="btn btn-save">Save</button>
+            </form>
+        </div>
+            <div class="card">
+            <h3>Assignment Status</h3>
 
-                        <strong>{{ member['username'] }}</strong>
+            <form method="POST">
+                <select name="status" style="width:100%; padding:8px; margin:10px 0;">
+                    <option value="to_do" {% if status == "to_do" %}selected{% endif %}>📝 To Do</option>
+                    <option value="ongoing" {% if status == "ongoing" %}selected{% endif %}>⏳ Ongoing</option>
+                    <option value="completed" {% if status == "completed" %}selected{% endif %}>✅ Completed</option>
+                </select>
+
+                <button type="submit" class="btn btn-save">Update Status</button>
+            </form>
+         </div>
+
+         <div class="card" style="margin-bottom:15px;">
+                <h3>Activity Log</h3>
+
+                {% for log in logs %}
+                    <div style="margin-bottom:10px;">
+                        <p>{{ log["activity"] }}</p>
+                        <small>{{ log["timestamp"] }}</small>
                     </div>
                 {% endfor %}
             </div>
-            <div class="card" style="margin-bottom:15px;">
+
+        </div>
+
+            
+     <div class="right-side">
+         <div class="card" style="margin-bottom:15px;">
                 <h3>Comments</h3>
                 {% for comment in comments %}
                     <p>• {{ comment }}</p>
@@ -124,18 +130,7 @@
                 </form>
             </div>
 
-            <div class="card" style="margin-bottom:15px;">
-                <h3>Activity Log</h3>
-
-                {% for log in logs %}
-                    <div style="margin-bottom:10px;">
-                        <p>{{ log["activity"] }}</p>
-                        <small>{{ log["timestamp"] }}</small>
-                    </div>
-                {% endfor %}
-            </div>
-
-                <div class="card">
+             <div class="card">
                     <h3>Attachment</h3>
 
                     {% if attachment %}
@@ -175,21 +170,29 @@
 
             </div>
 
-        </div>
+            <div class="card" style="margin-bottom:15px;">
+                <h3>Members</h3>
+                {% for member in members %}
+                    <div onclick="openProfileModal(this)" 
+                         data-username="{{ member['username'] }}"
+                         data-fullname="{{ member['full_name'] if member['full_name'] else 'No Name Set' }}"
+                         data-bio="{{ member['bio'] if member['bio'] else 'No bio added yet.' }}"
+                         data-pic="{% if member['profile_pic'] %}{{ url_for('uploaded_file', filename=member['profile_pic']) }}{% else %}https://ui-avatars.com/api/?name={{ member['username'] }}&background=random{% endif %}"
+                         style="display:flex; align-items:center; gap:15px; margin-bottom:15px; cursor: pointer;">
+                        
+                        {% if member['profile_pic'] %}
+                            <img src="{{ url_for('uploaded_file', filename=member['profile_pic']) }}"
+                                style="width:50px; height:50px; border-radius:50%; object-fit:cover; border: 2px solid #ccc;">
+                        {% else %}
+                            <img src="https://ui-avatars.com/api/?name={{ member['username'] }}&background=random"
+                                style="width:50px; height:50px; border-radius:50%; object-fit:cover; border: 2px solid #ccc;">
+                        {% endif %}
 
-        <div class="card">
-            <h3>Assignment Status</h3>
-
-            <form method="POST">
-                <select name="status" style="width:100%; padding:8px; margin:10px 0;">
-                    <option value="to_do" {% if status == "to_do" %}selected{% endif %}>📝 To Do</option>
-                    <option value="ongoing" {% if status == "ongoing" %}selected{% endif %}>⏳ Ongoing</option>
-                    <option value="completed" {% if status == "completed" %}selected{% endif %}>✅ Completed</option>
-                </select>
-
-                <button type="submit" class="btn btn-save">Update Status</button>
-            </form>
-        </div>
+                        <strong>{{ member['username'] }}</strong>
+                    </div>
+                {% endfor %}
+            </div>
+        
 
         <div class="card" style="margin-bottom:15px;">
                 <h3>Group Chat</h3>
@@ -198,8 +201,6 @@
                         <button class="btn btn-save" onclick="window.location.href='/chat'" title="Group Chat">Chat</button>
                     </div>
         </div>
-
-    </div>
 </div>
 
 
