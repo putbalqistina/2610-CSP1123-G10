@@ -41,7 +41,7 @@
 
     </div>
 
-    <form action="/send" method="POST">
+    <form action="{{ url_for('send_message', assignment_id=assignment_id) }}" method="POST">
 
 
         <textarea

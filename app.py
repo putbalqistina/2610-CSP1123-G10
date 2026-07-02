@@ -682,6 +682,7 @@ def assignment(title):
     return render_template(
         "assignment.html",
         title=title,
+        assignment_id=assignment_id,
         description=data["description"],
         comments=data["comments"],
         attachment=data["attachment"],
@@ -817,8 +818,8 @@ def uploaded_file(filename):
 
 # Route untuk chat
 
-@app.route('/chat')
-def chat():
+@app.route('/chat/<int:assignment_id>')
+def chat(assignment_id):
     if 'user' not in session:
         return redirect(url_for('login'))
     conn = sqlite3.connect('database.db')
@@ -829,8 +830,9 @@ def chat():
                message,
                created_at
         FROM messages
+        WHERE assignment_id = ?
         ORDER BY created_at
-    """)
+    """, (assignment_id,))
 
     messages = cursor.fetchall()
 
@@ -838,7 +840,8 @@ def chat():
 
     return render_template(
         'chat.html',
-        messages=messages
+        messages=messages,
+        assignment_id=assignment_id
     )
 
 @app.route('/personal_chat') #Route peraonal chat dengan other member
@@ -951,8 +954,8 @@ def send_personal_message():
         )
     )
 
-@app.route('/send', methods=['POST'])
-def send_message():
+@app.route('/send/<int:assignment_id>', methods=['POST'])
+def send_message(assignment_id):
 
     user_email = session.get('user')
 
@@ -976,12 +979,12 @@ def send_message():
         INSERT INTO messages
         (assignment_id, sender_name, message)
         VALUES (?, ?, ?)
-    """, (1, sender_name, message))
+    """, (assignment_id, sender_name, message))
 
     conn.commit()
     conn.close()
 
-    return redirect(url_for("chat"))
+    return redirect(url_for("chat", assignment_id=assignment_id))
 
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():
