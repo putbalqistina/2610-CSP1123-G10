@@ -1,13 +1,12 @@
 import os
 import sqlite3
 import json
-import smtplib
 import requests
 from datetime import datetime, timedelta
-from email.mime.text import MIMEText
 import uuid
 import secrets
-import threading
+from flask import send_file
+
 
 from flask import Flask, render_template, request, redirect, session, url_for, send_from_directory
 from flask_apscheduler import APScheduler
@@ -35,6 +34,10 @@ app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_DEFAULT_SENDER")
 mail = Mail(app)
 scheduler = APScheduler()
 scheduler.init_app(app)
+
+@app.route("/download-db")
+def download_db():
+    return send_file("database.db", as_attachment=True)
 
 
 # Ensure upload folder directory structure exists on startup
