@@ -198,16 +198,19 @@ def home():
     return render_template("landingpage.html")
 
 def send_email(to_email, subject, body):
-    sender = "assignmate4u@gmail.com"
-    password = "mdom ybrf nwcf hcic"
+    sender = os.getenv("MAIL_DEFAULT_SENDER")
+    password = os.getenv("MAIL_PASSWORD")
+    server = os.getenv("MAIL_SERVER")
+    port = int(os.getenv("MAIL_PORT", 587)) 
 
     msg = MIMEText(body)
     msg["Subject"] = subject
     msg["From"] = sender
     msg["To"] = to_email
 
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-        smtp.login(sender, password)
+    with smtplib.SMTP(server, port) as smtp:
+        smtp.starttls() 
+        smtp.login(os.getenv("MAIL_USERNAME"), password)
         smtp.send_message(msg)
 
 def check_deadlines(): 
