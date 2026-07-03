@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Refresh kalendar serta-merta untuk tunjuk warna baru
                 calendar.refetchEvents();
             } else {
-                alert('Gagal menyimpan warna baru.');
+                alert('Failed to save the new color.');
             }
         })
         .catch(error => console.error('Error saving color:', error));

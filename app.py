@@ -500,7 +500,7 @@ def editprofile():
     ).fetchone()
     conn.close()
     
-    return render_template('index.html', user=user_data)
+    return render_template('editprofile.html', user=user_data)
 
 
 @app.route("/analytics")
