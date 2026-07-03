@@ -5,6 +5,7 @@
 <title>Analytics</title>
 
 <link rel="stylesheet" href="{{ url_for('static', filename='analytics.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 <body>
 
@@ -13,20 +14,80 @@
 
 <!-- Topbar -->
 <div class="topbar">
-    <div>AssignMate</div>
-    <input type="text" placeholder="Search 🔍︎">
-    <div>Notifications | Filter</div>
-    <div class="analytics-link">
-    <a href="{{ url_for('analytics') }}" style="text-decoration: none; cursor: pointer;">
-    📊 Analytics
-    </a>
-    </div>
-    <div class="settings-link">
-    <a href="/edit_profile" style="text-decoration: none; cursor: pointer;">
-            🌣
-        </a>
-    </div>
+            <div class="brand">
+                <img src="{{ url_for('static', filename='images/Assignmate 2.png') }}" alt="Logo" class="brand-logo">
+                <a href="{{ url_for('dashboard') }}">
+                    <span>AssignMate</span>
+                </a>
+            </div>
+            
+
+            <div class="search-container" style="flex-grow: 1; display: flex; justify-content: center;">
+                <form action="{{ url_for('dashboard') }}" method="GET"
+                style="display: inline-flex; align-items: center;
+                    background: #fff;
+                    border: 1px solid #ccc;
+                    border-radius: 20px;
+                    padding: 5px 15px;
+                    width: 100%;
+                    max-width: 400px;">
+
+                    {% if not code %}
+                    <input type="hidden" name="subject_filter" value="{{ request.args.get('subject_filter', 'All') }}">
+                    {% endif %}
+
+                    <input 
+                        type="text" 
+                        name="search" 
+                        placeholder="{% if code %}Search assignments in {{ code }}...{% else %}Search assignments or subjects...{% endif %}" 
+                        value="{{ search_query or '' }}" 
+                        style="border: none;
+                            outline: none;
+                            width: 100%;
+                            font-size: 14px;
+                            background: transparent;
+                            color: #000;"
+                    >
+
+        <button type="submit"
+                style="background: none;
+                       border: none;
+                       cursor: pointer;
+                       color: #555;">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
+
+    </form>
 </div>
+            
+
+                
+                <div class="settings-link">
+                    <a href="/editprofile"  class="topbar-btn">
+                        <i class="fa-solid fa-gear"></i>
+                    </a>    
+                </div>
+                
+                <div class="analytics-link">
+                    <a href="{{ url_for('analytics') }}" class="topbar-btn">
+                        <i class="fa-solid fa-chart-line"></i>
+                
+                    </a>
+                </div>
+
+                <button id="openTimer" class="topbar-btn">
+                    <i class="fa-solid fa-stopwatch"></i>
+                </button>
+
+                <div class="calendar-link">
+                    <a href="{{ url_for('calendar_view') }}" class="topbar-btn">
+                        <i class="fa-solid fa-calendar"></i>
+                    </a>
+                </div>
+
+            </div>
+        </div>
+
 
 
 

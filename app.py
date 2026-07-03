@@ -1060,11 +1060,9 @@ def forgot_password():
             
             reset_url = url_for('reset_password', token=token, _external=True)
             
-            # --- BYPASS FLASK-MAIL AND USE BREVO HTTP API ---
             url = "https://api.brevo.com/v3/smtp/email"
             
-            # Make sure BREVO_API_KEY is defined in your Render Environment Variables 
-            # and starts with 'xkeysib-'
+            
             headers = {
                 "accept": "application/json",
                 "api-key": os.getenv("BREVO_API_KEY"),
@@ -1087,7 +1085,7 @@ def forgot_password():
             
             try:
                 response = requests.post(url, json=payload, headers=headers)
-                # If Brevo accepts it, it returns a 201 Created status
+    
                 if response.status_code != 201:
                     print(f"Brevo API Error: {response.text}")
             except Exception as e:
@@ -1095,14 +1093,11 @@ def forgot_password():
                 
         conn.close()
         
-        # Keep showing your popup modal
+
         return render_template('forgot_password.html', show_popup=True)
         
     return render_template('forgot_password.html', show_popup=False)
 
-# -------------------------------------------------------------
-# 2. VERIFY TOKEN AND RESET PASSWORD ROUTE
-# -------------------------------------------------------------
 @app.route('/reset-password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
     conn = sqlite3.connect('database.db')  # Update with your actual DB path
@@ -1118,7 +1113,6 @@ def reset_password(token):
     
     if not user:
         conn.close()
-        # Token is either dead or typed wrong
         return "The password reset token is invalid or has expired.", 400
         
     if request.method == 'POST':

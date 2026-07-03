@@ -83,3 +83,284 @@ a {
     border-radius: 8px;
     border: 1px solid #ccc;
 }
+
+.topbar-btn {
+    border: none;
+    outline: none;
+    cursor: pointer;
+
+    background: white;
+    padding: 10px 14px;
+    border-radius: 10px;
+
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    transition: 0.2s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.topbar-btn:hover{
+    transform:translateY(-2px);
+}
+
+.search-bar input{
+    width: 350px;
+
+    padding: 12px 16px;
+
+    border-radius: 12px;
+    border: 1px solid #ddd;
+
+    font-size: 14px;
+}
+
+/* Title */
+h1 {
+    font-size: 20px;
+    margin-bottom: 40px;
+    padding: 0 40px;
+}
+
+.brand {
+    font-size : 30px;
+    font-weight :700;
+    color : #1f2937;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.brand-logo {
+    width: auto;
+    height: 40px;
+}
+
+.filter-group {
+    margin-bottom: 10px;
+}
+
+.filter-group label {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.filter-group select {
+    width: 100%;
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+.apply-btn {
+    width: 100%;
+    background-color: #2e4a3d; /* Warna ikut tema AssignMate */
+    color: white;
+    border: none;
+    padding: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 5px;
+}
+
+.alert-box {
+    background: #fff3cd;
+    border: 1px solid #ffe69c;
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    margin: 20px auto;
+    width: 80%;
+    max-width: 600px;
+    transform: translateY(-5px) scale(1.00);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+}
+
+/* click effect */
+.add-btn:active {
+    transform: scale(0.95);
+}
+
+/* glow effect */
+.add-btn::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: rgba(76, 175, 80, 0.4);
+    opacity: 0;
+    transition: 0.3s;
+}
+
+.add-btn:hover::after {
+    opacity: 1;
+    transform: scale(1.4);
+}
+
+/* base button */
+.btn {
+    padding: 10px 16px;
+    border: none;
+    border-radius: 8px;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: all 0.25s ease;
+}
+
+/* SAVE button */
+.btn-save {
+    background: #4CAF50;
+    color: white;
+}
+
+.btn-save:hover {
+    background: #43a047;
+    transform: translateY(-2px);
+}
+
+/* ADD button */
+.btn-add {
+    background: #2196F3;
+    color: white;
+}
+
+.btn-add:hover {
+    background: #1e88e5;
+    transform: translateY(-2px);
+}
+
+/* UPLOAD button */
+.btn-upload {
+    background: #9c27b0;
+    color: white;
+}
+
+.btn-upload:hover {
+    background: #8e24aa;
+    transform: translateY(-2px);
+}
+
+/* click effect */
+.btn:active {
+    transform: scale(0.95);
+}
+
+/* popup right side */
+.right {
+    position: relative;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* popup kecil */
+.pomodoro-popup {
+    display: none;
+
+    position: absolute;
+    top: 50px;
+    right: 50px;
+
+    width: 260px;
+
+    background: white;
+    padding: 20px;
+
+    border-radius: 15px;
+
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+
+    z-index: 999;
+}
+
+/* popup top */
+.popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* close button */
+#closeTimer {
+    border: none;
+    background: none;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+/* timer text */
+#timer {
+    font-size: 42px;
+    text-align: center;
+    margin: 20px 0;
+
+}
+
+
+.alert-box {
+    position: relative;
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    cursor: pointer;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+
+.alert-box {
+    position: relative;
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    cursor: pointer;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(
+        135deg,
+        #fff9db 0%,
+        #fffdf5 50%,
+        #ffffff 100%
+    );
+}
+
+.search-input {
+    border: none !important;
+    outline: none; 
+    width: 350px; 
+    font-size: 14px; 
+    background: transparent; 
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+
+}
+
+.search-submit-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #555555;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
