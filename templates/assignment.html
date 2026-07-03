@@ -19,11 +19,7 @@
                     <span>AssignMate</span>
                 </a>
             </div>
-            
-            <div class="search-bar">
-                <input type="text" placeholder="Search 🔍︎">
-            </div>
-            
+       
             <div style="display: flex; align-items: center; gap: 15px;">
                 
                 <div class="nav-item dropdown">
@@ -68,11 +64,6 @@
                     </a>
                 </div>
 
-                <div class="personal-chat-link">
-                    <a href="{{ url_for('personal_chat') }}" class="topbar-btn">
-                        <i class="fa-solid fa-comments"></i>
-                    </a>
-                </div>
             </div>
         </div>
 
@@ -196,7 +187,7 @@
 
         <div class="card" style="margin-bottom:15px;">
                 <a href="{{ url_for('chat', assignment_id=assignment_id) }}">
-                    Group Chat
+                    <h3>Group Chat</h3>
                 </a>
                     
                     <div style="margin-bottom:10px;">

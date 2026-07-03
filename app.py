@@ -7,7 +7,7 @@ from email.mime.text import MIMEText
 import uuid
 import secrets
 
-from flask import Flask, render_template, request, redirect, session, url_for, send_from_directory
+from flask import Flask, abort, render_template, request, redirect, session, url_for, send_from_directory
 from flask_apscheduler import APScheduler
 from werkzeug.utils import secure_filename
 from flask_mail import Mail, Message
@@ -597,8 +597,9 @@ def assignment(title):
     assignment = conn.execute("""
         SELECT id
         FROM assignments
-        WHERE title = ?
+        WHERE title= ?
     """, (title,)).fetchone()
+
 
     assignment_id = assignment["id"]
 
@@ -825,24 +826,37 @@ def chat(assignment_id):
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
 
-    cursor.execute("""
+    conn = get_db()
+
+# Ambil semua mesej
+    messages = conn.execute("""
         SELECT sender_name,
-               message,
-               created_at
+            message,
+            created_at
         FROM messages
         WHERE assignment_id = ?
         ORDER BY created_at
-    """, (assignment_id,))
+    """, (assignment_id,)).fetchall()
 
-    messages = cursor.fetchall()
+    # Ambil title assignment
+    assignment = conn.execute("""
+        SELECT title
+        FROM assignments
+        WHERE id = ?
+    """, (assignment_id,)).fetchone()
+
+    title = assignment["title"]
 
     conn.close()
 
     return render_template(
-        'chat.html',
+        "chat.html",
         messages=messages,
-        assignment_id=assignment_id
+        assignment_id=assignment_id,
+        title=title
     )
+
+   
 
 @app.route('/personal_chat') #Route peraonal chat dengan other member
 def personal_chat():

@@ -83,3 +83,23 @@ a {
     border-radius: 8px;
     border: 1px solid #ccc;
 }
+
+.nav-bar {
+    text-align: right;
+    margin-bottom: 15px;
+}
+
+.exit-btn {
+    display: inline-block;
+    padding: 8px 16px;
+    background: #ffcccc;
+    color: #333;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: 0.3s;
+    font-weight: bold;
+}
+
+.exit-btn:hover {
+    background: #ff9999;
+}

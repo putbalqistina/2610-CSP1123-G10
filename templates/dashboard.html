@@ -18,20 +18,39 @@
                 <span>AssignMate</span>
             </div>
             
-            <div class="search-container">
-                <form action="{{ url_for('dashboard') }}" method="GET" class="search-form">
-                    <input type="hidden" name="subject_filter" value="{{ request.args.get('subject_filter', 'All') }}">
-                    
+            <div class="search-container" style="flex-grow: 1; display: flex; justify-content: center;">
+                <form action="{{ url_for('dashboard') }}" method="GET"
+                    style="display: inline-flex; align-items: center;
+                            background: #fff;
+                            border: 1px solid #ccc;
+                            border-radius: 20px;
+                            padding: 5px 15px;
+                            width: 100%;
+                            max-width: 400px;">
+
                     <input 
                         type="text" 
                         name="search" 
-                        placeholder="Search assignments or subjects and press Enter..." 
+                        placeholder="Search assignments or subjects..." 
                         value="{{ search_query or '' }}" 
-                        class="search-input"
+                        style="
+                            border: none;
+                            outline: none;
+                            width: 100%;
+                            font-size: 14px;
+                            background: transparent;
+                            color: #000;
+                        "
                     >
-                    <button type="submit" class="search-submit-btn">
+
+                    <button type="submit"
+                            style="background: none;
+                                border: none;
+                                cursor: pointer;
+                                color: #555;">
                         <i class="fa-solid fa-magnifying-glass"></i>
                     </button>
+
                 </form>
             </div>
             
