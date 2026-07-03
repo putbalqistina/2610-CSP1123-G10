@@ -337,8 +337,8 @@ def login():
             session["user"] = user["email"]
             return redirect(url_for("dashboard"))
         else:
-            return "Invalid credentials ❌", 401
-
+            flash("Incorrect username/email or password.", "error")
+            return redirect(url_for("login"))
     return render_template("login.html")
 
 

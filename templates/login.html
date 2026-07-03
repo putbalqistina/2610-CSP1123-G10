@@ -29,6 +29,28 @@
     </div>
 
 </div>
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
 
+        <div id="loginErrorModal" class="login-error-modal">
+            <div class="login-error-content">
+                <h3>Login Failed</h3>
+                <p>{{ message }}</p>
+
+                <button onclick="closeLoginError()">Close</button>
+            </div>
+        </div>
+
+        {% endfor %}
+    {% endif %}
+{% endwith %}
+
+<script>
+function closeLoginError() {
+    document.getElementById("loginErrorModal").style.display = "none";
+}
+</script>
+</script>
 </body>
 </html>
