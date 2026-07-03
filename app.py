@@ -7,7 +7,7 @@ from email.mime.text import MIMEText
 import uuid
 import secrets
 
-from flask import Flask, render_template, request, redirect, session, url_for, send_from_directory
+from flask import Flask, abort, render_template, request, redirect, session, url_for, send_from_directory
 from flask_apscheduler import APScheduler
 from werkzeug.utils import secure_filename
 from flask_mail import Mail, Message
@@ -619,6 +619,21 @@ def assignment(id):
             "comments": [],
             "attachment": []
         }
+
+    data = assignment_store[assignment_id_str]
+
+
+    conn = get_db()
+
+    assignment = conn.execute("""
+        SELECT id
+        FROM assignments
+        WHERE id= ?
+    """, (id,)).fetchone()
+
+
+    assignment_id = assignment["id"]
+
     data = assignment_store[assignment_id_str]
 
     if request.method == "POST":
@@ -668,6 +683,7 @@ def assignment(id):
     return render_template(
         "assignment.html",
         title=title,
+        assignment_id=assignment_id,
         description=data["description"],
         comments=data["comments"],
         attachment=data["attachment"],
@@ -810,29 +826,44 @@ def uploaded_file(filename):
 
 # Route untuk chat
 
-@app.route('/chat')
-def chat():
+@app.route('/chat/<int:assignment_id>')
+def chat(assignment_id):
     if 'user' not in session:
         return redirect(url_for('login'))
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
 
-    cursor.execute("""
-        SELECT sender_name,
-               message,
-               created_at
-        FROM messages
-        ORDER BY created_at
-    """)
+    conn = get_db()
 
-    messages = cursor.fetchall()
+# Ambil semua mesej
+    messages = conn.execute("""
+        SELECT sender_name,
+            message,
+            created_at
+        FROM messages
+        WHERE assignment_id = ?
+        ORDER BY created_at
+    """, (assignment_id,)).fetchall()
+
+    # Ambil title assignment
+    assignment = conn.execute("""
+        SELECT title
+        FROM assignments
+        WHERE id = ?
+    """, (assignment_id,)).fetchone()
+
+    title = assignment["title"]
 
     conn.close()
 
     return render_template(
-        'chat.html',
-        messages=messages
+        "chat.html",
+        messages=messages,
+        assignment_id=assignment_id,
+        title=title
     )
+
+   
 
 @app.route('/personal_chat') #Route peraonal chat dengan other member
 def personal_chat():
@@ -944,8 +975,8 @@ def send_personal_message():
         )
     )
 
-@app.route('/send', methods=['POST'])
-def send_message():
+@app.route('/send/<int:assignment_id>', methods=['POST'])
+def send_message(assignment_id):
 
     user_email = session.get('user')
 
@@ -969,12 +1000,12 @@ def send_message():
         INSERT INTO messages
         (assignment_id, sender_name, message)
         VALUES (?, ?, ?)
-    """, (1, sender_name, message))
+    """, (assignment_id, sender_name, message))
 
     conn.commit()
     conn.close()
 
-    return redirect(url_for("chat"))
+    return redirect(url_for("chat", assignment_id=assignment_id))
 
 @app.route("/forgot-password", methods=["GET", "POST"])
 def forgot_password():

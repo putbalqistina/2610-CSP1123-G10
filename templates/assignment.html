@@ -20,29 +20,47 @@
                 </a>
             </div>
             
-             <div class="search-container" style="flex-grow: 1; display: flex; justify-content: center;">
-              <form action="{% if code %}{{ url_for('subject', code=code) }}{% else %}{{ url_for('dashboard') }}{% endif %}" method="GET" class="search-form" style="width: 100%; max-width: 400px;">
-        
-                {% if not code %}
-                   <input type="hidden" name="subject_filter" value="{{ request.args.get('subject_filter', 'All') }}">
-                {% endif %}
-        
-                  <input 
-                     type="text" 
-                     name="search" 
-                     placeholder="{% if code %}Search assignments in {{ code }}...{% else %}Search assignments or subjects and press Enter...{% endif %}" 
-                     value="{{ search_query or '' }}" 
-                      class="search-input"
-                     >
-        
-                <button type="submit" class="search-submit-btn">
-                  <i class="fa-solid fa-magnifying-glass"></i>
-                </button>
-              </form>
-            </div>
+
+            <div class="search-container" style="flex-grow: 1; display: flex; justify-content: center;">
+    <form action="{{ url_for('dashboard') }}" method="GET"
+          style="display: inline-flex; align-items: center;
+                 background: #fff;
+                 border: 1px solid #ccc;
+                 border-radius: 20px;
+                 padding: 5px 15px;
+                 width: 100%;
+                 max-width: 400px;">
+
+        {% if not code %}
+           <input type="hidden" name="subject_filter" value="{{ request.args.get('subject_filter', 'All') }}">
+        {% endif %}
+
+        <input 
+            type="text" 
+            name="search" 
+            placeholder="{% if code %}Search assignments in {{ code }}...{% else %}Search assignments or subjects...{% endif %}" 
+            value="{{ search_query or '' }}" 
+            style="border: none;
+                   outline: none;
+                   width: 100%;
+                   font-size: 14px;
+                   background: transparent;
+                   color: #000;"
+        >
+
+        <button type="submit"
+                style="background: none;
+                       border: none;
+                       cursor: pointer;
+                       color: #555;">
+            <i class="fa-solid fa-magnifying-glass"></i>
+        </button>
+
+    </form>
+</div>
             
 
-
+                
                 <div class="settings-link">
                     <a href="/editprofile"  class="topbar-btn">
                         <i class="fa-solid fa-gear"></i>
@@ -66,54 +84,49 @@
                     </a>
                 </div>
 
-                <div class="personal-chat-link">
-                    <a href="{{ url_for('personal_chat') }}" class="topbar-btn">
-                        <i class="fa-solid fa-comments"></i>
-                    </a>
-                </div>
             </div>
         </div>
 
 
     <h1>{{ title }}</h1>
 
-    <div class="cards" >
+    <div class="assignment-layout" >
 
-        <div class="card" style="margin-bottom: 20px; width: 650px;height: 500px; box-sizing: border-box; display: flex; flex-direction: column;">          
+     <div class="left-side">
+        <div class="card">
             <h3>Assignment Description</h3>
               <form method="POST">
-            <textarea name="description" style="width: 100%; box-sizing: border-box; height: 80px; resize: none; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;">{{ description }}</textarea>               <button type="submit" class="btn btn-save">Save</button>
+                <textarea name="description" style="width: 100%; box-sizing: border-box; height: 80px; resize: none; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;">{{ description }}</textarea>
+                <button type="submit" class="btn btn-save">Save</button>
                </form>
-            </div>
+        </div>
             
-         <div>
-            <div class="card" style="margin-bottom:15px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                  <h3 style="margin: 0;">Members</h3>
-                   <a href="{{ url_for('add_NewMember', assignment_id=assignment.id) }}" class="addNewMember-btn" title="Add New Member">+</a>
-                </div>
-                {% for member in members %}
-                    <div onclick="openProfileModal(this)" 
-                         data-username="{{ member['username'] }}"
-                         data-fullname="{{ member['full_name'] if member['full_name'] else 'No Name Set' }}"
-                         data-bio="{{ member['bio'] if member['bio'] else 'No bio added yet.' }}"
-                         data-gender="{{ member['gender'] if member['gender'] else 'Not specified' }}"
-                         data-pic="{% if member['profile_pic'] %}{{ url_for('uploaded_file', filename=member['profile_pic']) }}{% else %}https://ui-avatars.com/api/?name={{ member['username'] }}&background=random{% endif %}"
-                         style="display:flex; align-items:center; gap:15px; margin-bottom:15px; cursor: pointer;">
-                        
-                        {% if member['profile_pic'] %}
-                            <img src="{{ url_for('uploaded_file', filename=member['profile_pic']) }}"
-                                style="width:50px; height:50px; border-radius:50%; object-fit:cover; border: 2px solid #ccc;">
-                        {% else %}
-                            <img src="https://ui-avatars.com/api/?name={{ member['username'] }}&background=random"
-                                style="width:50px; height:50px; border-radius:50%; object-fit:cover; border: 2px solid #ccc;">
-                        {% endif %}
+        <div class="card">
+            <h3>Assignment Status</h3>
+            <form method="POST">
+                <select name="status" style="width:100%; padding:8px; margin:10px 0;">
+                    <option value="to_do" {% if status == "to_do" %}selected{% endif %}>📝 To Do</option>
+                    <option value="ongoing" {% if status == "ongoing" %}selected{% endif %}>⏳ Ongoing</option>
+                    <option value="completed" {% if status == "completed" %}selected{% endif %}>✅ Completed</option>
+                </select>
+                <button type="submit" class="btn btn-save">Update Status</button>
+            </form>
+         </div>
 
-                        <strong>{{ member['username'] }}</strong>
+         <div class="card" style="margin-bottom:15px;">
+                <h3>Activity Log</h3>
+                {% for log in logs %}
+                    <div style="margin-bottom:10px;">
+                        <p>{{ log["activity"] }}</p>
+                        <small>{{ log["timestamp"] }}</small>
                     </div>
                 {% endfor %}
-            </div>
-            <div class="card" style="margin-bottom:15px;">
+          </div>
+     </div>
+
+            
+     <div class="right-side">
+         <div class="card" style="margin-bottom:15px;">
                 <h3>Comments</h3>
                 {% for comment in comments %}
                     <p>• {{ comment }}</p>
@@ -125,39 +138,20 @@
                 </form>
             </div>
 
-            <div class="card" style="margin-bottom:15px;">
-                <h3>Activity Log</h3>
-
-                {% for log in logs %}
-                    <div style="margin-bottom:10px;">
-                        <p>{{ log["activity"] }}</p>
-                        <small>{{ log["timestamp"] }}</small>
-                    </div>
-                {% endfor %}
-            </div>
-
-                <div class="card">
+             <div class="card">
                     <h3>Attachment</h3>
 
                     {% if attachment %}
                         {% for file in attachment %}
-
                         <div class="file-box">
-
-                            <a href="{{ url_for('uploaded_file', filename=file) }}"
-                            target="_blank">
+                            <a href="{{ url_for('uploaded_file', filename=file) }}" target="_blank">
                             {{ file }}
                             </a>
-
-                            <a href="{{ url_for('delete_file', filename=file) }}"
-                            class="btn btn-delete">
+                            <a href="{{ url_for('delete_file', filename=file) }}" class="btn btn-delete">
                             Delete
                             </a>
-
                         </div>
-
                         {% endfor %}
-
                     {% else %}
                         <p>No file uploaded</p>
                     {% endif %}
@@ -165,7 +159,6 @@
                     {% if attachment|length < 3 %}
                     <form method="POST" enctype="multipart/form-data">
                         <input type="file" name="file">
-
                         <button type="submit" class="btn btn-upload">
                             Upload
                         </button>
@@ -173,34 +166,43 @@
                     {% else %}
                         <p>Maximum 3 files uploaded.</p>
                     {% endif %}
-
             </div>
 
-        </div>
+            <div class="card" style="margin-bottom:15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">Members</h3>
+                    <a href="{{ url_for('add_NewMember', assignment_id=assignment.id) }}" class="addNewMember-btn" title="Add New Member">+</a>
+                </div>
+                 {% for member in members %}
+                    <div onclick="openProfileModal(this)" 
+                         data-username="{{ member['username'] }}"
+                         data-fullname="{{ member['full_name'] if member['full_name'] else 'No Name Set' }}"
+                         data-bio="{{ member['bio'] if member['bio'] else 'No bio added yet.' }}"
+                         data-gender="{{ member['gender'] if member['gender'] else 'Not specified' }}"
+                         data-pic="{% if member['profile_pic'] %}{{ url_for('uploaded_file', filename=member['profile_pic']) }}{% else %}https://ui-avatars.com/api/?name={{ member['username'] }}&background=random{% endif %}"
+                         style="display:flex; align-items:center; gap:15px; margin-bottom:15px; cursor: pointer;">
+                        
+                        {% if member['profile_pic'] %}
+                            <img src="{{ url_for('uploaded_file', filename=member['profile_pic']) }}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border: 2px solid #ccc;">
+                        {% else %}
+                            <img src="https://ui-avatars.com/api/?name={{ member['username'] }}&background=random" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border: 2px solid #ccc;">
+                        {% endif %}
 
-        <div class="card">
-            <h3>Assignment Status</h3>
-
-            <form method="POST">
-                <select name="status" style="width:100%; padding:8px; margin:10px 0;">
-                    <option value="to_do" {% if status == "to_do" %}selected{% endif %}>📝 To Do</option>
-                    <option value="ongoing" {% if status == "ongoing" %}selected{% endif %}>⏳ Ongoing</option>
-                    <option value="completed" {% if status == "completed" %}selected{% endif %}>✅ Completed</option>
-                </select>
-
-                <button type="submit" class="btn btn-save">Update Status</button>
-            </form>
-        </div>
-
-        <div class="card" style="margin-bottom:15px;">
-                <h3>Group Chat</h3>
-                    
-                    <div style="margin-bottom:10px;">
-                        <button class="btn btn-save" onclick="window.location.href='/chat'" title="Group Chat">Chat</button>
+                        <strong>{{ member['username'] }}</strong>
                     </div>
-        </div>
+                {% endfor %}
+            </div>
+        
 
-    </div>
+       <div class="card" style="margin-bottom:15px;">
+               <h3>Group Chat</h3>
+    
+                <div style="margin-bottom:10px;">
+                    <a href="{{ url_for('chat', assignment_id=assignment_id) }}">
+                       <button class="btn btn-save" title="Group Chat">Chat</button>
+                    </a>
+                </div>
+        </div>
 </div>
 
 
@@ -232,14 +234,12 @@
 
 <script>
 function openProfileModal(element) {
-    // Ambil data atribut daripada element ahli yang diklik
     var username = element.getAttribute('data-username');
     var fullname = element.getAttribute('data-fullname');
     var bio = element.getAttribute('data-bio');
     var pic = element.getAttribute('data-pic');
     var gender = element.getAttribute('data-gender');
 
-    // Tapisan tambahan: Jika database pulangkan string "None" atau kosong, tukar kepada teks alternatif
     if (bio === "None" || bio === "") {
         bio = "No bio added yet.";
     }
@@ -252,14 +252,12 @@ function openProfileModal(element) {
         gender = "Gender: " + gender;
     }
 
-    // Masukkan data ke dalam element pop-up modal
     document.getElementById("modalUsername").innerText = "@" + username;
     document.getElementById("modalFullName").innerText = fullname;
     document.getElementById("modalBio").innerText = bio;
     document.getElementById("modalPic").src = pic;
     document.getElementById("modalGender").innerText = gender;
 
-    // Paparkan modal
     document.getElementById("profileModal").style.display = "flex";
 } 
 
@@ -267,7 +265,6 @@ function closeProfileModal() {
     document.getElementById("profileModal").style.display = "none";
 }
 
-// Menutup modal secara automatik jika klik di kawasan luar kotak putih
 window.onclick = function(event) {
     var modal = document.getElementById("profileModal");
     if (event.target == modal) {

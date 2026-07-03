@@ -109,6 +109,31 @@ h1 {
     transform: translateY(-4px);
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
+/* Assignment Description */
+.assignment-description{
+    display: flex;
+    flex-direction: column;
+}
+
+.assignment-description h3{
+    margin: 0 0 12px;
+}
+
+.assignment-description form{
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.assignment-description textarea{
+    flex: 1;
+    min-height: 0;
+    margin-bottom: 12px;
+}
+
+.assignment-description button{
+    align-self: flex-start;
+}
 
 textarea {
     width: 100%;
@@ -445,51 +470,24 @@ textarea {
 }
 
 /* --- Hiasan untuk Search Bar di Topbar --- */
-.search-container {
-    flex-grow: 1;
-    display: flex;
-    justify-content: center;
+.assignment-layout{
+    display:flex;
+    gap:20px;
+    align-items:flex-start;
 }
 
-.search-form {
-    display: inline-flex;
-    align-items: center;
-    background-color: #ffffff;
-    border: 1px solid #cccccc;
-    border-radius: 20px;
-    padding: 5px 15px;
-    width: 100%;
-    max-width: 400px;
+.left-side{
+    width:650px;
+    display:flex;
+    flex-direction:column;
+    gap:15px;
 }
 
-.search-input {
-    border: none !important;
-    outline: none; 
-    width: 350px; 
-    font-size: 14px; 
-    background: transparent; 
-    padding: 12px 16px;
-    border-radius: 12px;
-    border: 1px solid #ddd;
-
-}
-
-.search-submit-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: #555555;
-    padding: 0;
-    display: flex;
-    align-items: center;
-}
-
-.chat-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px; /* jarak icon & text */
-    text-decoration: none;
+.right-side{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:15px;
 }
 
 .addNewMember-btn {
