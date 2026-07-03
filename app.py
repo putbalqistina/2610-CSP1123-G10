@@ -18,7 +18,7 @@ app.secret_key = "secretkey"
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 app.config["MAIL_SERVER"] = os.environ.get("MAIL_SERVER")
-app.config["MAIL_PORT"] = int(os.environ.get("MAIL_PORT"))
+app.config["MAIL_PORT"] = int(os.environ.get("MAIL_PORT", 587))
 app.config["MAIL_USE_TLS"] = os.environ.get("MAIL_USE_TLS") == "True"
 app.config["MAIL_USERNAME"] = os.environ.get("MAIL_USERNAME")
 app.config["MAIL_PASSWORD"] = os.environ.get("MAIL_PASSWORD")
@@ -147,14 +147,6 @@ def init_all_tables():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS assignment_members (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            assignment_id INTEGER NOT NULL,
-            member_email TEXT NOT NULL
-        );
-    """)
 
     conn.execute("""
         CREATE TABLE IF NOT EXISTS activity_logs (
@@ -185,7 +177,7 @@ init_all_tables()
 
 
 @app.route("/")
-def home():
+def index():
     return render_template("landingpage.html")
 
 def send_email(to_email, subject, body):
@@ -254,7 +246,7 @@ assignments_data = {
 # --- Routes ---
 
 @app.route('/')
-def index():
+def landing():
     if 'user' in session:
         return redirect(url_for('dashboard'))
     return redirect(url_for('login'))
@@ -321,8 +313,7 @@ def add_assignment():
     error_msg = None
 
     if request.method == 'POST':
-        conn = sqlite3.connect('database.db')
-        cursor = conn.cursor()
+
         subject = request.form.get('subject')
         title = request.form.get('title')
         deadline = request.form.get('deadline')
@@ -619,23 +610,7 @@ def assignment(id):
             "comments": [],
             "attachment": []
         }
-<<<<<<< HEAD
-
-    conn = get_db()
-
-    assignment = conn.execute("""
-        SELECT id
-        FROM assignments
-        WHERE title= ?
-    """, (title,)).fetchone()
-
-
-    assignment_id = assignment["id"]
-
-    data = assignment_store[title]
-=======
     data = assignment_store[assignment_id_str]
->>>>>>> origin/feature-husna
 
     if request.method == "POST":
         new_desc = request.form.get("description")
@@ -684,7 +659,7 @@ def assignment(id):
     return render_template(
         "assignment.html",
         title=title,
-        assignment_id=assignment_id,
+        assignment_id=id,
         description=data["description"],
         comments=data["comments"],
         attachment=data["attachment"],

@@ -19,29 +19,6 @@
                     <span>AssignMate</span>
                 </a>
             </div>
-<<<<<<< HEAD
-       
-            <div style="display: flex; align-items: center; gap: 15px;">
-                
-                <div class="nav-item dropdown">
-                    <button class="topbar-btn"><i class="fa-solid fa-filter"></i>Filter
-                    </button>
-                    <div class="dropdown-content">
-                        <form action="/dashboard" method="GET">
-                            <div class="filter-group">
-                                <label for="subject_filter">Subject</label>
-                                <select name="subject_filter" id="subject_filter">
-                                    <option value="All" {% if request.args.get('subject_filter') == 'All' or not request.args.get('subject_filter') %}selected{% endif %}>All Subjects</option>
-                                    {% for subject in subjects %}
-                                        <option value="{{ subject }}" {% if request.args.get('subject_filter') == subject %}selected{% endif %}>{{ subject }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <button type="submit" class="apply-btn">Apply Filter</button>
-                        </form>
-                    </div>
-                </div>
-=======
             
              <div class="search-container" style="flex-grow: 1; display: flex; justify-content: center;">
               <form action="{% if code %}{{ url_for('subject', code=code) }}{% else %}{{ url_for('dashboard') }}{% endif %}" method="GET" class="search-form" style="width: 100%; max-width: 400px;">
@@ -65,7 +42,6 @@
             </div>
             
 
->>>>>>> origin/feature-husna
 
                 <div class="settings-link">
                     <a href="/editprofile"  class="topbar-btn">
@@ -101,15 +77,6 @@
      <div class="left-side">
         <div class="card">
             <h3>Assignment Description</h3>
-<<<<<<< HEAD
-            <form method="POST">
-                <textarea name="description" style="width: 100%; box-sizing: border-box; height: 80px; resize: none; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;">{{ description }}</textarea>
-                <button type="submit" class="btn btn-save">Save</button>
-            </form>
-        </div>
-            <div class="card">
-            <h3>Assignment Status</h3>
-=======
               <form method="POST">
             <textarea name="description" style="width: 100%; box-sizing: border-box; height: 80px; resize: none; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;">{{ description }}</textarea>               <button type="submit" class="btn btn-save">Save</button>
                </form>
@@ -137,8 +104,14 @@
                             <img src="https://ui-avatars.com/api/?name={{ member['username'] }}&background=random"
                                 style="width:50px; height:50px; border-radius:50%; object-fit:cover; border: 2px solid #ccc;">
                         {% endif %}
->>>>>>> origin/feature-husna
 
+                        <strong>{{ member['username'] }}</strong>
+                    </div>
+                  {% endfor %}
+                </div>
+
+    <div class="card" style="margin-bottom:15px;">
+                <h3>Assignment Status</h3>
             <form method="POST">
                 <select name="status" style="width:100%; padding:8px; margin:10px 0;">
                     <option value="to_do" {% if status == "to_do" %}selected{% endif %}>📝 To Do</option>
@@ -149,6 +122,7 @@
                 <button type="submit" class="btn btn-save">Update Status</button>
             </form>
          </div>
+        </div>
 
          <div class="card" style="margin-bottom:15px;">
                 <h3>Activity Log</h3>
@@ -160,8 +134,7 @@
                     </div>
                 {% endfor %}
             </div>
-
-        </div>
+    </div>
 
             
      <div class="right-side">
@@ -217,28 +190,6 @@
 
             </div>
 
-            <div class="card" style="margin-bottom:15px;">
-                <h3>Members</h3>
-                {% for member in members %}
-                    <div onclick="openProfileModal(this)" 
-                         data-username="{{ member['username'] }}"
-                         data-fullname="{{ member['full_name'] if member['full_name'] else 'No Name Set' }}"
-                         data-bio="{{ member['bio'] if member['bio'] else 'No bio added yet.' }}"
-                         data-pic="{% if member['profile_pic'] %}{{ url_for('uploaded_file', filename=member['profile_pic']) }}{% else %}https://ui-avatars.com/api/?name={{ member['username'] }}&background=random{% endif %}"
-                         style="display:flex; align-items:center; gap:15px; margin-bottom:15px; cursor: pointer;">
-                        
-                        {% if member['profile_pic'] %}
-                            <img src="{{ url_for('uploaded_file', filename=member['profile_pic']) }}"
-                                style="width:50px; height:50px; border-radius:50%; object-fit:cover; border: 2px solid #ccc;">
-                        {% else %}
-                            <img src="https://ui-avatars.com/api/?name={{ member['username'] }}&background=random"
-                                style="width:50px; height:50px; border-radius:50%; object-fit:cover; border: 2px solid #ccc;">
-                        {% endif %}
-
-                        <strong>{{ member['username'] }}</strong>
-                    </div>
-                {% endfor %}
-            </div>
         
 
         <div class="card" style="margin-bottom:15px;">
@@ -250,7 +201,7 @@
                         <button class="btn btn-save" onclick="window.location.href='{{ url_for('chat', assignment_id=assignment_id) }}'" title="Group Chat">Chat</button>
                     </div>
         </div>
-</div>
+
 
 
 <div id="profileModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
