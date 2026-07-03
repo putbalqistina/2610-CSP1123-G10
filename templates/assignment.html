@@ -20,72 +20,65 @@
                 </a>
             </div>
             
-
             <div class="search-container" style="flex-grow: 1; display: flex; justify-content: center;">
-    <form action="{{ url_for('dashboard') }}" method="GET"
-          style="display: inline-flex; align-items: center;
-                 background: #fff;
-                 border: 1px solid #ccc;
-                 border-radius: 20px;
-                 padding: 5px 15px;
-                 width: 100%;
-                 max-width: 400px;">
-
-        {% if not code %}
-           <input type="hidden" name="subject_filter" value="{{ request.args.get('subject_filter', 'All') }}">
-        {% endif %}
-
-        <input 
-            type="text" 
-            name="search" 
-            placeholder="{% if code %}Search assignments in {{ code }}...{% else %}Search assignments or subjects...{% endif %}" 
-            value="{{ search_query or '' }}" 
-            style="border: none;
-                   outline: none;
-                   width: 100%;
-                   font-size: 14px;
-                   background: transparent;
-                   color: #000;"
-        >
-
-        <button type="submit"
-                style="background: none;
-                       border: none;
-                       cursor: pointer;
-                       color: #555;">
-            <i class="fa-solid fa-magnifying-glass"></i>
-        </button>
-
-    </form>
-</div>
+                <form action="{{ url_for('subject', code=code) }}" method="GET" style="display: inline-flex; align-items: center; background: #fff; border: 1px solid #ccc; border-radius: 20px; padding: 5px 15px; width: 100%; max-width: 400px;">
+                    <input 
+                        type="text" 
+                        name="search" 
+                        placeholder="Search assignments in {{ code }}..." 
+                        value="{{ search_query or '' }}" 
+                        style="border: none; outline: none; width: 100%; font-size: 14px; background: transparent; color: #000;"
+                    >
+                    <button type="submit" style="background: none; border: none; cursor: pointer; color: #555;">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                </form>
+            </div>
             
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="filter-section">
+                    <form method="GET" action="{{ url_for('subject', code=code) }}">
+                        <input type="hidden" name="search" value="{{ search_query }}">
+                        
+                        <div class="nav-item dropdown">
+                            <button type="button" class="topbar-btn"><i class="fa-solid fa-filter"></i> Filter</button>
+                            
+                            <div class="dropdown-content">
+                                <div class="filter-group">
+                                    <label for="status_filter">Status</label>
+                                    <select name="status" id="status_filter">
+                                        <option value="all" {% if status_filter == 'all' or not status_filter %}selected{% endif %}>All Status</option>
+                                        <option value="to_do" {% if status_filter == 'to_do' %}selected{% endif %}>To Do</option>
+                                        <option value="ongoing" {% if status_filter == 'ongoing' %}selected{% endif %}>On Going</option>
+                                        <option value="completed" {% if status_filter == 'completed' %}selected{% endif %}>Complete</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="apply-btn">Apply Filter</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
 
-                
                 <div class="settings-link">
-                    <a href="/editprofile"  class="topbar-btn">
-                        <i class="fa-solid fa-gear"></i>
-                    </a>    
+                    <a href="/editprofile" class="topbar-btn"><i class="fa-solid fa-gear"></i></a>    
                 </div>
                 
                 <div class="analytics-link">
-                    <a href="{{ url_for('analytics') }}" class="topbar-btn">
-                        <i class="fa-solid fa-chart-line"></i>
-                
-                    </a>
+                    <a href="{{ url_for('analytics') }}" class="topbar-btn"><i class="fa-solid fa-chart-line"></i></a>
                 </div>
 
-                <button id="openTimer" class="topbar-btn">
-                    <i class="fa-solid fa-stopwatch"></i>
-                </button>
+                <button id="openTimer" class="topbar-btn"><i class="fa-solid fa-stopwatch"></i></button>
 
                 <div class="calendar-link">
-                    <a href="{{ url_for('calendar_view') }}" class="topbar-btn">
-                        <i class="fa-solid fa-calendar"></i>
-                    </a>
+                    <a href="{{ url_for('calendar_view') }}" class="topbar-btn"><i class="fa-solid fa-calendar"></i></a>
                 </div>
 
+                <div class="personal-chat-link">
+                    <a href="{{ url_for('personal_chat') }}" class="topbar-btn"><i class="fa-solid fa-comments"></i></a>
+                </div>
             </div>
         </div>
+
 
 
     <h1>{{ title }}</h1>
