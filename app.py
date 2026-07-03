@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from email.mime.text import MIMEText
 import uuid
 import secrets
+import threading
 
 from flask import Flask, render_template, request, redirect, session, url_for, send_from_directory
 from flask_apscheduler import APScheduler
@@ -32,6 +33,8 @@ app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_DEFAULT_SENDER")
 
 
 mail = Mail(app)
+scheduler = APScheduler()
+scheduler.init_app(app)
 
 
 # Ensure upload folder directory structure exists on startup
@@ -197,21 +200,44 @@ init_all_tables()
 def home():
     return render_template("landingpage.html")
 
+load_dotenv()
+
+
 def send_email(to_email, subject, body):
-    sender = os.getenv("MAIL_DEFAULT_SENDER")
-    password = os.getenv("MAIL_PASSWORD")
-    server = os.getenv("MAIL_SERVER")
-    port = int(os.getenv("MAIL_PORT", 587)) 
+    url = "https://api.brevo.com/v3/smtp/email"
 
-    msg = MIMEText(body)
-    msg["Subject"] = subject
-    msg["From"] = sender
-    msg["To"] = to_email
+    headers = {
+        "accept": "application/json",
+        "api-key": os.getenv("BREVO_API_KEY"),
+        "content-type": "application/json"
+    }
 
-    with smtplib.SMTP(server, port) as smtp:
-        smtp.starttls() 
-        smtp.login(os.getenv("MAIL_USERNAME"), password)
-        smtp.send_message(msg)
+    payload = {
+        "sender": {
+            "name": "AssignMate",
+            "email": os.getenv("MAIL_DEFAULT_SENDER")
+        },
+        "to": [
+            {
+                "email": to_email
+            }
+        ],
+        "subject": subject,
+        "textContent": body
+    }
+
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+
+        if response.status_code != 201:
+            print("Brevo Error:", response.text)
+            return False
+
+        return True
+
+    except Exception as e:
+        print("Email Error:", e)
+        return False
 
 def check_deadlines(): 
 
@@ -224,20 +250,40 @@ def check_deadlines():
     today = datetime.today().date()
 
     for a in assignments:
-        deadline_date = datetime.strptime(a["deadline"], "%Y-%m-%d").date()
+        try:
+            deadline_date = datetime.strptime(a["deadline"], "%Y-%m-%d").date()
+            days_left = (deadline_date - today).days
 
-        if deadline_date == today + timedelta(days=1):
-            send_email(
-                a["user_email"],
-                "Assignment Reminder",
-                f"Your assignment '{a['title']}' is due tomorrow."
-            )
+            if days_left == 1:
 
-            conn.execute(
-                "UPDATE assignments SET email_sent = 1 WHERE id = ?",
-                (a["id"],)
-            )
+                success = send_email(
+                    a["user_email"],
+                    "Assignment Reminder",
+                    f"""
+                Hello!
 
+                This is a reminder that your assignment:
+
+                {a['title']}
+
+                is due on {a['deadline']}.
+
+                Please complete it before the deadline.
+
+                - AssignMate
+                """
+                )
+
+                if success:
+                    conn.execute(
+                        "UPDATE assignments SET email_sent = 1 WHERE id = ?",
+                        (a["id"],)
+                    )
+
+        except Exception as e:
+            print(e)
+    conn.commit()
+    conn.close()
 
 # --- Data Stores ---
 
@@ -396,6 +442,7 @@ def add_assignment():
         return redirect(url_for("dashboard"))
 
     return render_template("add_Assignment.html", mmu_data=mmu_data, error_msg=error_msg)
+
 
 
 @app.route('/dashboard')
@@ -1198,7 +1245,14 @@ def delete_subject(code):
     
     return redirect(url_for('dashboard'))
 
+scheduler.add_job(
+    id="deadline_checker",
+    func=check_deadlines,
+    trigger="interval",
+    seconds=10
+)
 
+scheduler.start()
 
 if __name__ == '__main__':
     app.run(debug=True)
