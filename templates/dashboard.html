@@ -15,7 +15,9 @@
         <div class="topbar">
             <div class="brand">
                 <img src="{{ url_for('static', filename='images/Assignmate 2.png') }}" alt="Logo" class="brand-logo">
+                <a href="{{ url_for('dashboard') }}">
                 <span>AssignMate</span>
+                </a>
             </div>
             
             <div class="search-container" style="flex-grow: 1; display: flex; justify-content: center;">
@@ -147,26 +149,35 @@
     <h2 style="margin: 0; font-weight: bold;">{{ user.username }}'s Dashboard</h2>
 </div>
 
-        <div class="cards-container">
-            <div class="cards">
-                {% if assignments %}
-                    {% set displayed = [] %}
-                    {% for item in assignments %}
-                        {% if item.subject not in displayed %}
-                            <a href="{{ url_for('subject', code=item.subject) }}" class="card-link">
-                                <div class="card">
-                                    <span class="subject-tag">{{ item.subject }}</span>
-                                </div>
-                            </a>
-                            {% if displayed.append(item.subject) %}{% endif %}
-                        {% endif %}
-                    {% endfor %}
-                {% else %}
-                    <p class="no-data">No active assignments or subjects found for this filter.</p>
-                {% endif %}
-            </div>
-        </div>
+        <div class="cards">
+    {% if assignments %}
+        {% set displayed = [] %}
+        {% for item in assignments %}
+            {% if item.subject not in displayed %}
+                
+                <div class="card-subject-wrapper" style="position: relative; display: inline-block; margin: 10px;">
+                    
+                    <a href="{{ url_for('subject', code=item.subject) }}" class="card-link" style="text-decoration: none; color: inherit; display: block;">
+                        <div class="card" style="padding-bottom: 40px; min-width: 150px; min-height: 100px; position: relative;">
+                            <span class="subject-tag">{{ item.subject }}</span>
+                        </div>
+                    </a>
+                    
+                    <form action="{{ url_for('delete_subject', code=item.subject) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete the subject {{ item.subject }} together with all the assignments?');" style="position: absolute; bottom: 10px; right: 10px; z-index: 10;">
+                        <button type="submit" class="btn-delete-card" title="Delete Subject">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </form>
 
+                </div>
+
+                {% if displayed.append(item.subject) %}{% endif %}
+            {% endif %}
+        {% endfor %}
+    {% else %}
+        <p class="no-data">No active assignments or subjects found for this filter.</p>
+    {% endif %}
+</div>
     </div>
 
 
@@ -176,20 +187,27 @@
     
     <div style="background-color: white; padding: 30px; border-radius: 20px; width: 350px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.2); position: relative; font-family: sans-serif;">
         
+        <!-- Butang pangkah (x) untuk menutup tingkap modal apabila ditekan -->
         <span onclick="closeProfileModal()" style="position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #aaa;">&times;</span>
         
         
+    <!-- Ruangan bulat untuk meletakkan gambar profil -->
         <div style="width: 100px; height: 100px; margin: 0 auto 15px auto; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 3px solid #f3f3f3;">
+          <!-- Semak jika data gambar profile_pic wujud di dalam sistem -->
             {% if user and user.profile_pic %}
                 <img src="{{ url_for('uploaded_file', filename=user.profile_pic) }}" style="width: 100%; height: 100%; object-fit: cover;">
-            {% else %}
+            <!-- Gunakan gambar placeholder ui-avatars mengikut nama jika profil kosong -->
+                {% else %}
                 <img src="https://ui-avatars.com/api/?name={{ user.username if user else 'User' }}&background=random" style="width: 100%; height: 100%; object-fit: cover;">
             {% endif %}
 
             
         </div>
         
+        <!-- Paparan nama akaun pengguna (Username) -->
         <h2 style="margin: 5px 0; color: #333; font-size: 1.4rem;">@{{ user.username if user else 'username' }}</h2>
+        
+        <!-- Paparan Nama Penuh pengguna (Menunjukkan 'No Name Set' jika tiada data) -->
         <p style="margin: 0; font-size: 0.9rem; color: #777;">{{ user.full_name if user.full_name else 'No Name Set' }}</p>
         
         <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
@@ -202,6 +220,7 @@
         </div>
 
         
+        <!-- Kotak khas untuk memaparkan teks status Bio -->
         <div style="text-align: left; background-color: #fafafa; padding: 12px; border-radius: 10px; min-height: 40px;">
             <strong style="font-size: 0.85rem; color: #555; display: block; margin-bottom: 5px;">Bio:</strong>
             <p style="margin: 0; font-size: 0.9rem; color: #444; font-style: italic; line-height: 1.4;">
@@ -209,7 +228,15 @@
             </p>
         </div>
         
+
+        <div style="text-align: left; background-color: #fafafa; padding: 12px; border-radius: 10px; min-height: 40px;">
+            <strong style="font-size: 0.85rem; color: #555; display: block; margin-bottom: 5px;">Gender:</strong>
+            <p style="margin: 0; font-size: 0.9rem; color: #444; font-style: italic; line-height: 1.4;">
+                {{ user.gender if user.gender else 'No gender specified.' }}
+            </p>
+        </div>
         
+        <!-- link untuk menavigasi pengguna ke halaman editprofile -->
         <a href="{{ url_for('editprofile') }}" style="display: block; margin-top: 20px; background-color: #333; color: white; padding: 12px; border-radius: 10px; text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: background 0.2s;">
             Edit Profile
         </a>

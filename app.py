@@ -13,14 +13,16 @@ from werkzeug.utils import secure_filename
 from flask_mail import Mail, Message
 
 app = Flask(__name__)
+
 app.secret_key = "secretkey"
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config["MAIL_SERVER"] = "smtp.gmail.com"
-app.config["MAIL_PORT"] = 587
-app.config["MAIL_USE_TLS"] = True
-app.config["MAIL_USERNAME"] = "assignmate4u@gmail.com"
-app.config["MAIL_PASSWORD"] = "mdom ybrf nwcf hcic"
+app.config["MAIL_SERVER"] = os.environ.get("MAIL_SERVER")
+app.config["MAIL_PORT"] = int(os.environ.get("MAIL_PORT"))
+app.config["MAIL_USE_TLS"] = os.environ.get("MAIL_USE_TLS") == "True"
+app.config["MAIL_USERNAME"] = os.environ.get("MAIL_USERNAME")
+app.config["MAIL_PASSWORD"] = os.environ.get("MAIL_PASSWORD")
+app.config["MAIL_DEFAULT_SENDER"] = os.environ.get("MAIL_DEFAULT_SENDER")
 
 mail = Mail(app)
 # Ensure upload folder directory structure exists on startup
@@ -30,8 +32,9 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 base_path = os.path.dirname(__file__)
 json_path = os.path.join(base_path, 'subjects.json')
 
-# --- Helper Functions ---
 
+
+    
 def get_db():
     conn = sqlite3.connect("database.db")
     conn.row_factory = sqlite3.Row
@@ -406,19 +409,23 @@ def dashboard():
     """, (user_email, user_email)).fetchall()
     user_subjects = [row['subject'] for row in subject_rows]
 
-    # 2. Bina query SQL dinamik bersama fungsi Search
+    # Ambil tarikh hari ini dalam format YYYY-MM-DD
+    today_str = datetime.today().strftime('%Y-%m-%d')
+
+    # 2. Bina query SQL dinamik bersama fungsi Search & Tapis Tarikh Belum Lepas
     query = """
         SELECT * FROM assignments 
         WHERE (user_email = ? OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?))
+        AND deadline >= ?
     """
-    params = [user_email, user_email]
+    params = [user_email, user_email, today_str]
 
     # Jika user pilih subjek tertentu di drop-down filter
     if selected_filter != 'All' and selected_filter != '':
         query += " AND subject = ?"
         params.append(selected_filter)
 
-    # Jika user menaip sesuatu di search bar (Cari pada Title atau Subject)
+    # Jika user menaip sesuatu di search bar
     if search_query:
         query += " AND (title LIKE ? OR subject LIKE ?)"
         params.append(f"%{search_query}%")
@@ -427,7 +434,6 @@ def dashboard():
     assignments = conn.execute(query, params).fetchall()
     
     today = datetime.today().date()
-    
     upcoming = []
     
     for a in assignments:
@@ -460,10 +466,10 @@ def editprofile():
         file = request.files.get('profile_pic')
         filename = None
 
-        # 2. Semak jika fail wujud dan dibenarkan
-        if file and file.filename != '' and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            unique_filename = str(uuid.uuid4()) + "_" + filename
+        # 2. Semak jika fail wujud, tidak kosong dan format yang dibenarkan
+        if file and file.filename != '' and allowed_file(file.filename): 
+            filename = secure_filename(file.filename) # Gunakan secure_filename untuk elakkan masalah path traversal
+            unique_filename = str(uuid.uuid4()) + "_" + filename #Tambah UUID untuk elakkan nama fail sama 
             path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
             file.save(path) # Simpan gambar ke static/uploads
             filename = unique_filename
@@ -549,26 +555,31 @@ def subject(code):
 
     conn = get_db()
     
-    # 1. Ambil input teks dari search bar (jika ada)
     search_query = request.args.get('search', '').strip()  
+    status_filter = request.args.get('status', '').strip() 
+    
+    # Ambil tarikh hari ini
+    today_str = datetime.today().strftime('%Y-%m-%d')
 
-    # 2. Bina query SQL dinamik - Ditambah "AND subject LIKE ?" untuk tapis subjek yang betul
+    # Bina query SQL yang menapis deadline >= hari ini
     query = """
         SELECT * FROM assignments 
         WHERE (user_email = ? OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?))
         AND subject LIKE ?
+        AND deadline >= ?
     """
-    # Guna `f"%{code}%"` supaya ia sepadan dengan format nama penuh subjek (contoh: "CMF1114 - Multimedia Fundamentals")
-    params = [user_email, user_email, f"%{code}%"]
+    params = [user_email, user_email, f"%{code}%", today_str]
 
-    # 3. Jika user menaip sesuatu di search bar, tapis berdasarkan Title
+    if status_filter and status_filter != 'all':
+        query += " AND status = ?"
+        params.append(status_filter)
+
     if search_query:
         query += " AND title LIKE ?"
         params.append(f"%{search_query}%")
 
     assignments = conn.execute(query, params).fetchall()
     
-    # Ambil data user untuk paparan
     user_data = conn.execute(
         "SELECT * FROM users WHERE email = ? OR username = ?", 
         (user_email, user_email)
@@ -576,21 +587,39 @@ def subject(code):
 
     conn.close()
     
-    # Hantar senarai yang telah ditapis dan search_query ke fail HTML subjek
-    return render_template('subject.html', code=code, assignments=assignments, user=user_data, search_query=search_query)
+    return render_template(
+        'subject.html', 
+        code=code, 
+        assignments=assignments, 
+        user=user_data, 
+        search_query=search_query,
+        status_filter=status_filter
+    )
 
-@app.route('/assignment/<title>', methods=["GET", "POST"])
-def assignment(title):
+@app.route('/assignment/<int:id>', methods=["GET", "POST"])
+def assignment(id):
     user_email = session.get("user")
     if not user_email:
         return redirect(url_for("login"))
     
-    if title not in assignment_store:
-        assignment_store[title] = {
+    conn = get_db()
+    assignment_row = conn.execute("SELECT * FROM assignments WHERE id = ?", (id,)).fetchone()
+    
+    if not assignment_row:
+        conn.close()
+        return "Assignment not found", 404
+        
+    title = assignment_row["title"]
+
+    # TUKAR DI SINI: Guna ID sebagai key unik tugasan dalam memori store
+    assignment_id_str = str(id)
+    if assignment_id_str not in assignment_store:
+        assignment_store[assignment_id_str] = {
             "description": "",
             "comments": [],
             "attachment": []
         }
+<<<<<<< HEAD
 
     conn = get_db()
 
@@ -604,79 +633,51 @@ def assignment(title):
     assignment_id = assignment["id"]
 
     data = assignment_store[title]
+=======
+    data = assignment_store[assignment_id_str]
+>>>>>>> origin/feature-husna
 
     if request.method == "POST":
         new_desc = request.form.get("description")
         if new_desc:
             data["description"] = new_desc
-            log_activity(
-                title,
-                f"{session['user']} updated the description."
-            )
+            log_activity(title, f"{session['user']} updated the description.")
 
         new_comment = request.form.get("comment")
         if new_comment:
             data["comments"].append(new_comment)
-            log_activity(
-                title,
-                f"{session['user']} added a comment."
-            )
+            log_activity(title, f"{session['user']} added a comment.")
 
         file = request.files.get("file")
-        if (
-            file and
-            file.filename != "" and
-            len(data["attachment"]) < 3 and 
-            allowed_file(file.filename)
-        ):
+        if (file and file.filename != "" and len(data["attachment"]) < 3 and allowed_file(file.filename)):
             filename = secure_filename(file.filename)
             unique_filename = str(uuid.uuid4()) + "_" + filename
             path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
             file.save(path)
             data["attachment"].append(unique_filename)
-            log_activity(
-                title,
-                f"{session['user']} uploaded '{filename}'."
-            )
+            log_activity(title, f"{session['user']} uploaded '{filename}'.")
 
         status = request.form.get("status")
-        log_activity(
-            title,
-            f"{session['user']} changed the status to '{status}'."
-        )
-        conn = get_db()
+        log_activity(title, f"{session['user']} changed the status to '{status}'.")
+        
         conn.execute("""
             UPDATE assignments 
             SET status = ?
-            WHERE title = ?
-        """, (status, title))
+            WHERE id = ?
+        """, (status, id))
         conn.commit()
-        conn.close()
         
-        return redirect(url_for("assignment", title=title))
+        return redirect(url_for("assignment", id=id))
     
-    conn = get_db()
-    
-    # 1. Ambil data user semasa yang login
-    user_data = conn.execute("SELECT * FROM users WHERE email = ? OR username = ?", (user_email, user_email)).fetchone()
+    user_data = conn.execute("SELECT * FROM users WHERE email = ?", (user_email,)).fetchone()
 
-    # 2. Ambil data assignment berdasarkan tajuk yang betul
-    assignment_row = conn.execute("SELECT * FROM assignments WHERE title = ?", (title,)).fetchone()
-    
-    status = "to_do"
-    members_data = []
-    
-    # 3.Guna ID sebenar daripada tugasan untuk cari ahli kumpulan
-    if assignment_row:
-        status = assignment_row["status"]
-        members_data = conn.execute("""
-            SELECT users.username, users.full_name, users.bio, users.profile_pic 
-            FROM assignment_members 
-            JOIN users ON assignment_members.member_email = users.email
-            WHERE assignment_members.assignment_id = ?
-        """, (assignment_row["id"],)).fetchall() 
+    members_data = conn.execute("""
+        SELECT users.username, users.full_name, users.bio, users.profile_pic, users.gender 
+        FROM assignment_members 
+        JOIN users ON assignment_members.member_email = users.email
+        WHERE assignment_members.assignment_id = ?
+    """, (id,)).fetchall()
 
-    # 4. Ambil logs bagi assignment ini
     logs = conn.execute("SELECT * FROM activity_logs WHERE assignment_title = ? ORDER BY timestamp DESC", (title,)).fetchall()
     conn.close()
 
@@ -687,12 +688,12 @@ def assignment(title):
         description=data["description"],
         comments=data["comments"],
         attachment=data["attachment"],
-        status=status,
+        status=assignment_row["status"],
         logs=logs,
         user=user_data,
-        members=members_data 
+        members=members_data,
+        assignment=assignment_row 
     )
-
 
 @app.route('/api/assignments')
 def get_calendar_assignments():
@@ -707,13 +708,16 @@ def get_calendar_assignments():
     # 1. Ambil data tugasan
     if selected_subject == 'All' or selected_subject == '':
         rows = conn.execute(
-            "SELECT title, deadline, subject FROM assignments WHERE user_email = ?",
-            (user_email,)
+            """SELECT title, deadline, subject FROM assignments 
+               WHERE (user_email = ? OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?))""",
+            (user_email, user_email)
         ).fetchall()
     else:
         rows = conn.execute(
-            "SELECT title, deadline, subject FROM assignments WHERE user_email = ? AND subject = ?",
-            (user_email, selected_subject)
+            """SELECT title, deadline, subject FROM assignments 
+               WHERE (user_email = ? OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?)) 
+               AND subject = ?""",
+            (user_email, user_email, selected_subject)
         ).fetchall()
 
     # 2. Ambil peta warna (color map) yang telah disimpan oleh user ini
@@ -723,20 +727,23 @@ def get_calendar_assignments():
     ).fetchall()
     
     # Tukar kepada dictionary python { 'Nama Subjek': '#HEXCOLOR' }
-    user_colors = {c_row['subject']: c_row['color_code'] for c_row in color_rows}
+    user_colors = {c_row[0]: c_row[1] for c_row in color_rows}
     conn.close()
 
     events = []
     for row in rows:
-        subj = row['subject']
+        title = row[0]
+        deadline = row[1]
+        subj = row[2]
+
         # Semak jika user ada set warna sendiri, jika tiada guna warna default biru
         chosen_color = user_colors.get(subj, "#3788d8")
 
         events.append({
-            "title": f"[{subj}] {row['title']}",
-            "start": row['deadline'], 
+            "title": f"[{subj}] {title}", 
+            "start": deadline,            
             "allDay": True,
-            "color": chosen_color
+            "color": chosen_color         
         })
     
     return json.dumps(events)
@@ -780,11 +787,12 @@ def calendar_view():
     
     # Ambil senarai unik subjek yang didaftarkan oleh user ini sahaja
     subject_rows = conn.execute(
-        "SELECT DISTINCT subject FROM assignments WHERE user_email = ?", 
-        (user_email,)
+        "SELECT DISTINCT subject FROM assignments WHERE user_email = ? OR id IN (SELECT assignment_id FROM assignment_members WHERE member_email = ?)", 
+        (user_email, user_email)
     ).fetchall()
-    user_subjects = [row['subject'] for row in subject_rows]
+    user_subjects = [row[0] for row in subject_rows]
     conn.close()
+
     
     # Hantar senarai subjek ke frontend calendar.html
     return render_template('calendar.html', subjects=user_subjects)
@@ -1049,7 +1057,17 @@ def forgot_password():
             If you did not request this, please ignore this email.
             """
 
-            mail.send(msg)
+            print("===== About to send email =====")
+
+            try:
+                mail.send(msg)
+                print("===== Email sent successfully =====")
+
+            except Exception as e:
+                print("===== Email failed =====")
+                print(type(e))
+                print(e)
+                raise
 
         conn.close()
 
@@ -1093,6 +1111,101 @@ def reset_password(token):
 
     return render_template("reset_password.html")
 
+@app.route('/add_NewMember', methods=['GET', 'POST'])
+def add_NewMember():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    user_email = session['user']
+    
+    # 1. Ambil assignment_id secara dinamik daripada URL (GET) atau Form (POST)
+    assignment_id = request.args.get('assignment_id') or request.form.get('assignment_id')
+
+    if request.method == 'POST':
+        invited_email = request.form.get('email') # Guna 'email' untuk sepadan dengan borang HTML
+
+        conn = get_db()
+        cursor = conn.cursor()
+
+        # 2. Semak jika emel yang dijemput wujud dalam sistem
+        cursor.execute("SELECT email FROM users WHERE email = ?", (invited_email,))
+        invited_user = cursor.fetchone()
+
+        if not invited_user:
+            conn.close()
+            return render_template('add_NewMember.html', error_msg="The email entered is not registered in AssignMate.", assignment_id=assignment_id)
+
+        # 3. Pastikan context assignment_id tidak kosong
+        if not assignment_id:
+            conn.close()
+            return render_template('add_NewMember.html', error_msg="Error: No specific assignment/subject was targeted.", assignment_id=assignment_id)
+
+        # 4. Masukkan ahli baru ke dalam jadual 'assignment_members' KHAS untuk ID ini sahaja
+        try:
+            cursor.execute(
+                "INSERT INTO assignment_members (assignment_id, member_email) VALUES (?, ?)",
+                (assignment_id, invited_email)
+            )
+            conn.commit()
+        except sqlite3.IntegrityError:
+            conn.close()
+            return render_template('add_NewMember.html', error_msg="The member you are trying to add is already in this assignment.", assignment_id=assignment_id)
+
+        conn.close()
+        
+        # Selesai tambah, hantar pengguna kembali ke dashboard utama
+        return redirect(url_for('dashboard'))
+
+    # Jika akses biasa (GET), hantar nilai assignment_id ke template borang
+    return render_template('add_NewMember.html', assignment_id=assignment_id)
+
+
+
+@app.route('/delete_assignment/<int:id>', methods=['POST'])
+def delete_assignment(id):
+    if 'user' not in session:
+        return redirect(url_for('login'))
+        
+    conn = get_db()
+    # Pilihan: Padam dahulu rekod berkaitan di table 'assignment_members' dan 'messages' jika ada
+    conn.execute("DELETE FROM assignment_members WHERE assignment_id = ?", (id,))
+    conn.execute("DELETE FROM messages WHERE assignment_id = ?", (id,))
+    
+    # Padam tugasan utama
+    conn.execute("DELETE FROM assignments WHERE id = ?", (id,))
+    conn.commit()
+    conn.close()
+    
+    return redirect(request.referrer or url_for('dashboard'))
+
+@app.route('/delete_subject/<code>', methods=['POST'])
+def delete_subject(code):
+    user_email = session.get('user')
+    if not user_email:
+        return redirect(url_for('login'))
+        
+    conn = get_db()
+    
+    # Cari semua assignment id di bawah subjek ini milik user
+    assignments = conn.execute(
+        "SELECT id FROM assignments WHERE subject = ? AND user_email = ?", 
+        (code, user_email)
+    ).fetchall()
+    
+    for a in assignments:
+        conn.execute("DELETE FROM assignment_members WHERE assignment_id = ?", (a['id'],))
+        conn.execute("DELETE FROM messages WHERE assignment_id = ?", (a['id'],))
+        
+    # Padam semua tugasan di bawah subjek tersebut
+    conn.execute("DELETE FROM assignments WHERE subject = ? AND user_email = ?", (code, user_email))
+    
+    # Pilihan: Padam warna subjek jika ada
+    conn.execute("DELETE FROM subject_colors WHERE subject = ? AND user_email = ?", (code, user_email))
+    
+    conn.commit()
+    conn.close()
+    
+    return redirect(url_for('dashboard'))
 
 
 if __name__ == '__main__':

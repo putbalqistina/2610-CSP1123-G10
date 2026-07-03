@@ -19,6 +19,7 @@
                     <span>AssignMate</span>
                 </a>
             </div>
+<<<<<<< HEAD
        
             <div style="display: flex; align-items: center; gap: 15px;">
                 
@@ -40,6 +41,31 @@
                         </form>
                     </div>
                 </div>
+=======
+            
+             <div class="search-container" style="flex-grow: 1; display: flex; justify-content: center;">
+              <form action="{% if code %}{{ url_for('subject', code=code) }}{% else %}{{ url_for('dashboard') }}{% endif %}" method="GET" class="search-form" style="width: 100%; max-width: 400px;">
+        
+                {% if not code %}
+                   <input type="hidden" name="subject_filter" value="{{ request.args.get('subject_filter', 'All') }}">
+                {% endif %}
+        
+                  <input 
+                     type="text" 
+                     name="search" 
+                     placeholder="{% if code %}Search assignments in {{ code }}...{% else %}Search assignments or subjects and press Enter...{% endif %}" 
+                     value="{{ search_query or '' }}" 
+                      class="search-input"
+                     >
+        
+                <button type="submit" class="search-submit-btn">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+              </form>
+            </div>
+            
+
+>>>>>>> origin/feature-husna
 
                 <div class="settings-link">
                     <a href="/editprofile"  class="topbar-btn">
@@ -75,6 +101,7 @@
      <div class="left-side">
         <div class="card">
             <h3>Assignment Description</h3>
+<<<<<<< HEAD
             <form method="POST">
                 <textarea name="description" style="width: 100%; box-sizing: border-box; height: 80px; resize: none; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;">{{ description }}</textarea>
                 <button type="submit" class="btn btn-save">Save</button>
@@ -82,6 +109,35 @@
         </div>
             <div class="card">
             <h3>Assignment Status</h3>
+=======
+              <form method="POST">
+            <textarea name="description" style="width: 100%; box-sizing: border-box; height: 80px; resize: none; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;">{{ description }}</textarea>               <button type="submit" class="btn btn-save">Save</button>
+               </form>
+            </div>
+            
+         <div>
+            <div class="card" style="margin-bottom:15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                  <h3 style="margin: 0;">Members</h3>
+                   <a href="{{ url_for('add_NewMember', assignment_id=assignment.id) }}" class="addNewMember-btn" title="Add New Member">+</a>
+                </div>
+                {% for member in members %}
+                    <div onclick="openProfileModal(this)" 
+                         data-username="{{ member['username'] }}"
+                         data-fullname="{{ member['full_name'] if member['full_name'] else 'No Name Set' }}"
+                         data-bio="{{ member['bio'] if member['bio'] else 'No bio added yet.' }}"
+                         data-gender="{{ member['gender'] if member['gender'] else 'Not specified' }}"
+                         data-pic="{% if member['profile_pic'] %}{{ url_for('uploaded_file', filename=member['profile_pic']) }}{% else %}https://ui-avatars.com/api/?name={{ member['username'] }}&background=random{% endif %}"
+                         style="display:flex; align-items:center; gap:15px; margin-bottom:15px; cursor: pointer;">
+                        
+                        {% if member['profile_pic'] %}
+                            <img src="{{ url_for('uploaded_file', filename=member['profile_pic']) }}"
+                                style="width:50px; height:50px; border-radius:50%; object-fit:cover; border: 2px solid #ccc;">
+                        {% else %}
+                            <img src="https://ui-avatars.com/api/?name={{ member['username'] }}&background=random"
+                                style="width:50px; height:50px; border-radius:50%; object-fit:cover; border: 2px solid #ccc;">
+                        {% endif %}
+>>>>>>> origin/feature-husna
 
             <form method="POST">
                 <select name="status" style="width:100%; padding:8px; margin:10px 0;">
@@ -211,9 +267,14 @@
         
         <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
         
-        <div style="text-align: left; background-color: #fafafa; padding: 12px; border-radius: 10px; min-height: 60px;">
+        <div style="text-align: left; background-color: #fafafa; padding: 12px; border-radius: 10px; min-height: 50px; margin-bottom: 10px;">
             <strong style="font-size: 0.85rem; color: #555; display: block; margin-bottom: 5px;">Bio:</strong>
             <p id="modalBio" style="margin: 0; font-size: 0.9rem; color: #444; font-style: italic; line-height: 1.4;"></p>
+        </div>
+
+        <div style="text-align: left; background-color: #fafafa; padding: 12px; border-radius: 10px; min-height: 30px;">
+            <strong style="font-size: 0.85rem; color: #555; display: block; margin-bottom: 5px;">Gender:</strong>
+            <p id="modalGender" style="margin: 0; font-size: 0.9rem; color: #444; font-style: italic;"></p>
         </div>
     </div>
 </div>
@@ -225,6 +286,7 @@ function openProfileModal(element) {
     var fullname = element.getAttribute('data-fullname');
     var bio = element.getAttribute('data-bio');
     var pic = element.getAttribute('data-pic');
+    var gender = element.getAttribute('data-gender');
 
     // Tapisan tambahan: Jika database pulangkan string "None" atau kosong, tukar kepada teks alternatif
     if (bio === "None" || bio === "") {
@@ -233,12 +295,18 @@ function openProfileModal(element) {
     if (fullname === "None" || fullname === "") {
         fullname = "No Name Set";
     }
+    if (gender === "None" || gender === "" || gender === null) {
+        gender = "Gender: Not specified";
+    } else {
+        gender = "Gender: " + gender;
+    }
 
     // Masukkan data ke dalam element pop-up modal
     document.getElementById("modalUsername").innerText = "@" + username;
     document.getElementById("modalFullName").innerText = fullname;
     document.getElementById("modalBio").innerText = bio;
     document.getElementById("modalPic").src = pic;
+    document.getElementById("modalGender").innerText = gender;
 
     // Paparkan modal
     document.getElementById("profileModal").style.display = "flex";

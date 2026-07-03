@@ -136,6 +136,7 @@ button {
   cursor: pointer;
   border: none;
   transition: opacity 0.2s;
+
 }
 
 .btn-primary {
@@ -146,6 +147,11 @@ button {
 .btn-secondary {
   background-color: #eee;
   color: #1a1a1a;
+}
+
+.btn-edit {
+    background-color: #437651;
+    color: white;
 }
 
 button:hover {
