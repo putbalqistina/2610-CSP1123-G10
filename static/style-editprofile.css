@@ -222,3 +222,8 @@ button:hover {
             display: inline-block;
             margin-left: 10px;
         }
+
+.btn-logout {
+    background-color: rgb(118, 22, 22);
+    color: white;
+}

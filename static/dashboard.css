@@ -483,11 +483,44 @@ textarea {
     gap:15px;
 }
 
+
+
+
 .right-side{
     flex:1;
     display:flex;
     flex-direction:column;
     gap:15px;
+
+}
+.search-input {
+    border: none !important;
+    outline: none; 
+    width: 350px; 
+    font-size: 14px; 
+    background: transparent; 
+    padding: 12px 16px;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+
+}
+
+.search-submit-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #555555;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+.chat-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px; /* jarak icon & text */
+    text-decoration: none;
 }
 
 .addNewMember-btn {

@@ -61,31 +61,31 @@
             
 
                 
+
+
+
                 <div class="settings-link">
-                    <a href="/editprofile"  class="topbar-btn">
-                        <i class="fa-solid fa-gear"></i>
-                    </a>    
+                    <a href="/editprofile" class="topbar-btn"><i class="fa-solid fa-gear"></i></a>    
                 </div>
                 
                 <div class="analytics-link">
-                    <a href="{{ url_for('analytics') }}" class="topbar-btn">
-                        <i class="fa-solid fa-chart-line"></i>
-                
-                    </a>
+                    <a href="{{ url_for('analytics') }}" class="topbar-btn"><i class="fa-solid fa-chart-line"></i></a>
                 </div>
 
-                <button id="openTimer" class="topbar-btn">
-                    <i class="fa-solid fa-stopwatch"></i>
-                </button>
+                <button id="openTimer" class="topbar-btn"><i class="fa-solid fa-stopwatch"></i></button>
 
                 <div class="calendar-link">
-                    <a href="{{ url_for('calendar_view') }}" class="topbar-btn">
-                        <i class="fa-solid fa-calendar"></i>
-                    </a>
+                    <a href="{{ url_for('calendar_view') }}" class="topbar-btn"><i class="fa-solid fa-calendar"></i></a>
+                </div>
+
+
+                <div class="personal-chat-link">
+                    <a href="{{ url_for('personal_chat') }}" class="topbar-btn"><i class="fa-solid fa-comments"></i></a>
                 </div>
 
             </div>
         </div>
+
 
 
     <h1>{{ title }}</h1>
@@ -125,48 +125,55 @@
      </div>
 
             
-     <div class="right-side">
-         <div class="card" style="margin-bottom:15px;">
-                <h3>Comments</h3>
-                {% for comment in comments %}
-                    <p>• {{ comment }}</p>
-                {% endfor %}
+    <div class="right-side">
+        <div class="card" style="margin-bottom:15px;">
+            <h3>Comments</h3>
+            {% for comment in comments %}
+            <p>• {{ comment }}</p>
+            {% endfor %}
+            
+            <form method="POST">
+                <input type="text" name="comment" placeholder="Add note..." style="width:100%">
+                <button type="submit" class="btn btn-add">Add</button>
+            </form>
+    </div>
+    
+    
+    <div class="card">
+        
+        <h3>Attachment</h3>
+        
+        {% if attachment %}
+        {% for file in attachment %}
+        
+        <div class="file-box">
+            
+            <a href="{{ url_for('uploaded_file', filename=file) }}" target="_blank">
+                {{ file }}
+            </a>
+            
+            <a href="{{ url_for('delete_file', filename=file) }}" class="btn btn-delete">
+                Delete
+            </a>
+        </div>
+        
+        {% endfor %}
+        {% else %}
+        <p>No file uploaded</p>
+        {% endif %}
+        {% if attachment|length < 3 %}
+        
+        <form method="POST" enctype="multipart/form-data">
+            <input type="file" name="file">
+            <button type="submit" class="btn btn-upload">
+                Upload
+            </button>
+        </form>
+        {% else %}
+        <p>Maximum 3 files uploaded.</p>
+        {% endif %}
+    </div>
 
-                <form method="POST">
-                    <input type="text" name="comment" placeholder="Add note..." style="width:100%">
-                    <button type="submit" class="btn btn-add">Add</button>
-                </form>
-            </div>
-
-             <div class="card">
-                    <h3>Attachment</h3>
-
-                    {% if attachment %}
-                        {% for file in attachment %}
-                        <div class="file-box">
-                            <a href="{{ url_for('uploaded_file', filename=file) }}" target="_blank">
-                            {{ file }}
-                            </a>
-                            <a href="{{ url_for('delete_file', filename=file) }}" class="btn btn-delete">
-                            Delete
-                            </a>
-                        </div>
-                        {% endfor %}
-                    {% else %}
-                        <p>No file uploaded</p>
-                    {% endif %}
-
-                    {% if attachment|length < 3 %}
-                    <form method="POST" enctype="multipart/form-data">
-                        <input type="file" name="file">
-                        <button type="submit" class="btn btn-upload">
-                            Upload
-                        </button>
-                    </form>
-                    {% else %}
-                        <p>Maximum 3 files uploaded.</p>
-                    {% endif %}
-            </div>
 
             <div class="card" style="margin-bottom:15px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">

@@ -3,11 +3,11 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: Arial, sans-serif;
+    font-family: Poppins, sans-serif;
 }
 
 body {
-  font-family: 'Arial', sans-serif;
+  font-family: 'Poppins', sans-serif;
 }
 
 /* Navbar */
@@ -97,4 +97,29 @@ footer {
 @font-face {
     font-family: 'Biro_Script_reduced';
     src: url('/static/fonts/Biro_Script_reduced.ttf');
+}
+
+@font-face {
+    font-family: 'Mont-HeavyDEMO';
+    src: url('/static/fonts/Mont-HeavyDEMO.otf');
+}
+
+.navbar h1 {
+    font-family: 'Mont-HeavyDEMO', sans-serif;
+}
+
+.brand-logo {
+    width: auto;
+    height: 40px;
+}
+
+.brand-container {
+    display: flex;         
+    align-items: center;   
+    gap: 10px;            
+}
+
+
+.brand-container h1 {
+    margin: 0; 
 }

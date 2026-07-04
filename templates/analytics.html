@@ -8,49 +8,59 @@
 </head>
 <body>
 
+    <div class="dashboard">
+
+        <div class="topbar">
+            <div class="brand">
+                <img src="{{ url_for('static', filename='images/Assignmate 2.png') }}" alt="Logo" class="brand-logo">
+                <a href="{{ url_for('dashboard') }}">
+                    <span>AssignMate</span>
+                </a>
+            </div>
+
         <div class="nav-bar">
-    <a href="{{ url_for('dashboard') }}" class="exit-btn">Exit</a>
-     </div>
-
-<div class="analytics-container">
-
-    <h1 class="page-title">Analytics</h1>
-
-    <div class="analytics-grid">
-
-        <div class="card">
-            <h3>Completed</h3>
-            <p class="task-count">{{ completed }} tasks</p>
-            <p class="percentage">{{ completed_pct }}%</p>
-        </div>
-
-        <div class="card">
-            <h3>Ongoing</h3>
-            <p class="task-count">{{ ongoing }} tasks</p>
-            <p class="percentage">{{ ongoing_pct }}%</p>
-        </div>
-
-        <div class="card">
-            <h3>To Do</h3>
-            <p class="task-count">{{ todo }} tasks</p>
-            <p class="percentage">{{ todo_pct }}%</p>
-        </div>
-
+            <a href="{{ url_for('dashboard') }}" class="exit-btn">Exit</a>
+    </div>
     </div>
 
-    <div class="card overall-card">
-        <h3>Overall Progress</h3>
 
-        <div class="progress-bar">
-            <div class="progress-fill"
-                 style="width: {{ completed_pct }}%;">
-                {{ completed_pct }}%
+    <div class="analytics-container">
+        <h1 class="page-title">Analytics</h1>
+        <div class="analytics-grid">
+            
+            <div class="card">
+                <h3>Completed</h3>
+                <p class="task-count">{{ completed }} tasks</p>
+                <p class="percentage">{{ completed_pct }}%</p>
+            </div>
+
+
+            <div class="card">
+                <h3>Ongoing</h3>
+                <p class="task-count">{{ ongoing }} tasks</p>
+                <p class="percentage">{{ ongoing_pct }}%</p>
+            </div>
+
+
+            <div class="card">
+                <h3>To Do</h3>
+                <p class="task-count">{{ todo }} tasks</p>
+                <p class="percentage">{{ todo_pct }}%</p>
             </div>
         </div>
+    
     </div>
-
+    
+    <div class="card overall-card">
+        
+        <h3>Overall Progress</h3>
+        
+        <div class="progress-bar">
+            <div class="progress-fill"
+            style="width: {{ completed_pct }}%;">
+            {{ completed_pct }}%
+        </div>
+    </div>
 </div>
-
-
 </body>
 </html>

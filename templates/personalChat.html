@@ -9,31 +9,28 @@
 
 <body>
 
-        <div class="nav-bar">
-    <a href="{{ url_for('dashboard') }}" class="exit-btn">Exit Chat</a>
-     </div>
 
-<h2>Choose User</h2>
+    <div class="nav-bar">
+        <a href="{{ url_for('dashboard') }}" class="exit-btn">Exit Chat</a>
+    </div>
 
-<div class="user-list">
 
-{% if users %}
-
-    {% for user in users %}
-
+    <h2>Choose User</h2>
+    <div class="user-list">
+        {% if users %}
+        {% for user in users %}
+        
         <a class="user-card"
-           href="{{ url_for('personal_chat_room', email=user['email']) }}">
-            {{ user['username'] }}
-        </a>
-
+        href="{{ url_for('personal_chat_room', email=user['email']) }}">
+        {{ user['username'] }}
+    </a>
+    
     {% endfor %}
-
-{% else %}
-
+    {% else %}
+    
     <p>No other users available.</p>
-
-{% endif %}
-
+    
+    {% endif %}
 </div>
 
 </body>

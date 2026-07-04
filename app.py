@@ -1,30 +1,45 @@
 import os
 import sqlite3
 import json
-import smtplib
+import requests
 from datetime import datetime, timedelta
-from email.mime.text import MIMEText
 import uuid
 import secrets
+from flask import send_file
+
 
 from flask import Flask, abort, render_template, request, redirect, session, url_for, send_from_directory
 from flask_apscheduler import APScheduler
 from werkzeug.utils import secure_filename
 from flask_mail import Mail, Message
-
+from flask import render_template, request, redirect, url_for, flash
+from werkzeug.security import generate_password_hash
+from werkzeug.security import check_password_hash
+from dotenv import load_dotenv
+load_dotenv()
 app = Flask(__name__)
+
 
 app.secret_key = "secretkey"
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config["MAIL_SERVER"] = os.environ.get("MAIL_SERVER")
-app.config["MAIL_PORT"] = int(os.environ.get("MAIL_PORT"))
-app.config["MAIL_USE_TLS"] = os.environ.get("MAIL_USE_TLS") == "True"
-app.config["MAIL_USERNAME"] = os.environ.get("MAIL_USERNAME")
-app.config["MAIL_PASSWORD"] = os.environ.get("MAIL_PASSWORD")
-app.config["MAIL_DEFAULT_SENDER"] = os.environ.get("MAIL_DEFAULT_SENDER")
+app.config["MAIL_SERVER"] = os.getenv("MAIL_SERVER")
+app.config["MAIL_PORT"] = int(os.getenv("MAIL_PORT"))
+app.config["MAIL_USE_TLS"] = os.getenv("MAIL_USE_TLS") == "True"
+app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME")
+app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")
+app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_DEFAULT_SENDER")
+
 
 mail = Mail(app)
+scheduler = APScheduler()
+scheduler.init_app(app)
+
+@app.route("/download-db")
+def download_db():
+    return send_file("database.db", as_attachment=True)
+
+
 # Ensure upload folder directory structure exists on startup
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -86,7 +101,7 @@ def init_all_tables():
             gender TEXT,
             profile_pic TEXT,
             reset_token TEXT,
-            reset_expiry TEXT
+            token_expires TEXT
         )
     """)
 
@@ -188,18 +203,44 @@ init_all_tables()
 def home():
     return render_template("landingpage.html")
 
+load_dotenv()
+
+
 def send_email(to_email, subject, body):
-    sender = "assignmate4u@gmail.com"
-    password = "mdom ybrf nwcf hcic"
+    url = "https://api.brevo.com/v3/smtp/email"
 
-    msg = MIMEText(body)
-    msg["Subject"] = subject
-    msg["From"] = sender
-    msg["To"] = to_email
+    headers = {
+        "accept": "application/json",
+        "api-key": os.getenv("BREVO_API_KEY"),
+        "content-type": "application/json"
+    }
 
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
-        smtp.login(sender, password)
-        smtp.send_message(msg)
+    payload = {
+        "sender": {
+            "name": "AssignMate",
+            "email": os.getenv("MAIL_DEFAULT_SENDER")
+        },
+        "to": [
+            {
+                "email": to_email
+            }
+        ],
+        "subject": subject,
+        "textContent": body
+    }
+
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+
+        if response.status_code != 201:
+            print("Brevo Error:", response.text)
+            return False
+
+        return True
+
+    except Exception as e:
+        print("Email Error:", e)
+        return False
 
 def check_deadlines(): 
 
@@ -212,20 +253,40 @@ def check_deadlines():
     today = datetime.today().date()
 
     for a in assignments:
-        deadline_date = datetime.strptime(a["deadline"], "%Y-%m-%d").date()
+        try:
+            deadline_date = datetime.strptime(a["deadline"], "%Y-%m-%d").date()
+            days_left = (deadline_date - today).days
 
-        if deadline_date == today + timedelta(days=1):
-            send_email(
-                a["user_email"],
-                "Assignment Reminder",
-                f"Your assignment '{a['title']}' is due tomorrow."
-            )
+            if days_left == 1:
 
-            conn.execute(
-                "UPDATE assignments SET email_sent = 1 WHERE id = ?",
-                (a["id"],)
-            )
+                success = send_email(
+                    a["user_email"],
+                    "Assignment Reminder",
+                    f"""
+                Hello!
 
+                This is a reminder that your assignment:
+
+                {a['title']}
+
+                is due on {a['deadline']}.
+
+                Please complete it before the deadline.
+
+                - AssignMate
+                """
+                )
+
+                if success:
+                    conn.execute(
+                        "UPDATE assignments SET email_sent = 1 WHERE id = ?",
+                        (a["id"],)
+                    )
+
+        except Exception as e:
+            print(e)
+    conn.commit()
+    conn.close()
 
 # --- Data Stores ---
 
@@ -267,18 +328,20 @@ def login():
         password = request.form["password"]
 
         conn = get_db()
+        # 1. Look up the user strictly by email or username first
         user = conn.execute(
-            "SELECT * FROM users WHERE (email = ? OR username = ?) AND password = ?",
-            (login_input, login_input, password)
+            "SELECT * FROM users WHERE email = ? OR username = ?",
+            (login_input, login_input)
         ).fetchone()
         conn.close()
 
-        if user:
+        # 2. If the user exists, pass their stored hash and the typed password into the verifier
+        if user and check_password_hash(user["password"], password):
             session["user"] = user["email"]
             return redirect(url_for("dashboard"))
         else:
-            return "Invalid credentials ❌", 401
-
+            flash("Incorrect username/email or password.", "error")
+            return redirect(url_for("login"))
     return render_template("login.html")
 
 
@@ -299,10 +362,8 @@ def register():
             conn.close()
             return render_template("register.html", error="Email or Username already registered!")
 
-        conn.execute(
-            "INSERT INTO users (username, email, password) VALUES (?, ?, ?)",
-            (username, email, password)
-        )
+        hashed_password = generate_password_hash(password)
+        conn.execute("INSERT INTO users (username, email, password) VALUES (?, ?, ?)", (username, email, hashed_password))
         conn.commit()
         conn.close()
 
@@ -384,6 +445,7 @@ def add_assignment():
         return redirect(url_for("dashboard"))
 
     return render_template("add_Assignment.html", mmu_data=mmu_data, error_msg=error_msg)
+
 
 
 @app.route('/dashboard')
@@ -1007,108 +1069,113 @@ def send_message(assignment_id):
 
     return redirect(url_for("chat", assignment_id=assignment_id))
 
-@app.route("/forgot-password", methods=["GET", "POST"])
+@app.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
-
-    if request.method == "POST":
-
-        email = request.form["email"].strip().lower()
-
-        conn = get_db()
-
-        user = conn.execute(
-            "SELECT * FROM users WHERE email = ?",
-            (email,)
-        ).fetchone()
-
+    if request.method == 'POST':
+        email = request.form.get('email') 
+        
+        conn = sqlite3.connect('database.db')
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+        user = cursor.fetchone()
+        
         if user:
-
+            user_id = user[0]
             token = secrets.token_urlsafe(32)
-
-            conn.execute(
-                "UPDATE users SET reset_token = ? WHERE email = ?",
-                (token, email)
-            )
-
+            expires_at = (datetime.now() + timedelta(minutes=30)).strftime('%Y-%m-%d %H:%M:%S')
+            
+            cursor.execute("""
+                UPDATE users 
+                SET reset_token = ?, token_expires = ? 
+                WHERE id = ?
+            """, (token, expires_at, user_id))
             conn.commit()
-
-            reset_link = url_for(
-                "reset_password",
-                token=token,
-                _external=True
-            )
-
-            msg = Message(
-                subject="Password Reset",
-                sender=app.config["MAIL_USERNAME"],
-                recipients=[email]
-            )
-
-            msg.body = f"""
-            Hello,
-
-            You requested to reset your password.
-
-            Click the link below:
-
-            {reset_link}
-
-            If you did not request this, please ignore this email.
-            """
-
-            print("===== About to send email =====")
-
+            
+            reset_url = url_for('reset_password', token=token, _external=True)
+            
+            url = "https://api.brevo.com/v3/smtp/email"
+            
+            
+            headers = {
+                "accept": "application/json",
+                "api-key": os.getenv("BREVO_API_KEY"),
+                "content-type": "application/json"
+            }
+            
+            payload = {
+                "sender": {
+                    "name": "AssignMate",
+                    "email": os.getenv("MAIL_DEFAULT_SENDER")  # Must be your verified Brevo sender email
+                },
+                "to": [
+                    {
+                        "email": email
+                    }
+                ],
+                "subject": "Password Reset Request - AssignMate",
+                "textContent": f"Hello,\n\nTo reset your password, please click on the following link:\n{reset_url}\n\nIf you did not make this request, ignore this email."
+            }
+            
             try:
-                mail.send(msg)
-                print("===== Email sent successfully =====")
-
+                response = requests.post(url, json=payload, headers=headers)
+    
+                if response.status_code != 201:
+                    print(f"Brevo API Error: {response.text}")
             except Exception as e:
-                print("===== Email failed =====")
-                print(type(e))
-                print(e)
-                raise
-
+                print(f"Failed to connect to Brevo API: {e}")
+                
         conn.close()
+        
 
-        return render_template("forgot_password.html", show_popup=True)
+        return render_template('forgot_password.html', show_popup=True)
+        
+    return render_template('forgot_password.html', show_popup=False)
 
-    return render_template("forgot_password.html", show_popup=False)
-
-@app.route("/reset-password/<token>", methods=["GET", "POST"])
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
 def reset_password(token):
-
-    conn = get_db()
-
-    user = conn.execute(
-        "SELECT * FROM users WHERE reset_token = ?",
-        (token,)
-    ).fetchone()
-
+    conn = sqlite3.connect('database.db')  # Update with your actual DB path
+    cursor = conn.cursor()
+    
+    # 1. Check if the token is valid and not expired
+    now_str = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    cursor.execute("""
+        SELECT id FROM users 
+        WHERE reset_token = ? AND token_expires > ?
+    """, (token, now_str))
+    user = cursor.fetchone()
+    
     if not user:
         conn.close()
-        return "Invalid reset link."
-
-    if request.method == "POST":
-
-        new_password = request.form["password"]
-
-        conn.execute(
-            """
-            UPDATE users
-            SET password = ?, reset_token = NULL
-            WHERE email = ?
-            """,
-            (new_password, user["email"])
-        )
-
+        return "The password reset token is invalid or has expired.", 400
+        
+    if request.method == 'POST':
+        # Grab only the single password field matching your HTML input name="password"
+        new_password = request.form.get('password')
+        
+        if not new_password:
+            return "Password field cannot be empty.", 400
+            
+        # Securely hash the new password
+        hashed_password = generate_password_hash(new_password)
+        user_id = user[0]
+        
+        # 2. Update password and clear the token data completely
+        cursor.execute("""
+            UPDATE users 
+            SET password = ?, reset_token = NULL, token_expires = NULL 
+            WHERE id = ?
+        """, (hashed_password, user_id))
         conn.commit()
         conn.close()
-
-        return redirect(url_for("login"))
-
+        
+        # Redirect back to your main login page
+        return redirect(url_for('login')) 
+        
     conn.close()
 
-    return render_template("reset_password.html")
+    return render_template('reset_password.html', token=token)
+
 
 @app.route('/add_NewMember', methods=['GET', 'POST'])
 def add_NewMember():
@@ -1206,6 +1273,14 @@ def delete_subject(code):
     
     return redirect(url_for('dashboard'))
 
+scheduler.add_job(
+    id="deadline_checker",
+    func=check_deadlines,
+    trigger="interval",
+    seconds=10
+)
+
+scheduler.start()
 
 if __name__ == '__main__':
     app.run(debug=True)
