@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Analytics</title>
-
-<link rel="stylesheet" href="{{ url_for('static', filename='analytics.css') }}">
+    <meta charset="UTF-8">
+    <title>Analytics</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='analytics.css') }}">
 </head>
 <body>
 
@@ -18,49 +18,80 @@
                 </a>
             </div>
 
-        <div class="nav-bar">
+            <div class="search-container" style="flex-grow: 1; display: flex; justify-content: center;">
+                <form action="{{ url_for('dashboard') }}" method="GET"
+                      style="display: inline-flex; align-items: center; background: #fff; border: 1px solid #ccc; border-radius: 20px; padding: 5px 15px; width: 100%; max-width: 400px;">
+
+                    {% if not code %}
+                    <input type="hidden" name="subject_filter" value="{{ request.args.get('subject_filter', 'All') }}">
+                    {% endif %}
+
+                    <input 
+                        type="text" 
+                        name="search" 
+                        placeholder="{% if code %}Search assignments in {{ code }}...{% else %}Search assignments or subjects...{% endif %}" 
+                        value="{{ search_query or '' }}" 
+                        style="border: none; outline: none; width: 100%; font-size: 14px; background: transparent; color: #000;"
+                    >
+
+                    <button type="submit" style="background: none; border: none; cursor: pointer; color: #555;">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
+                </form>
+            </div>
+
+            <div class="topbar-actions" style="display: flex; align-items: center; gap: 10px;">
+                <div class="settings-link">
+                    <a href="/editprofile" class="topbar-btn">
+                        <i class="fa-solid fa-gear"></i>
+                    </a>    
+                </div>
+
+                <button id="openTimer" class="topbar-btn">
+                    <i class="fa-solid fa-stopwatch"></i>
+                </button>
+
+                <div class="calendar-link">
+                    <a href="{{ url_for('calendar_view') }}" class="topbar-btn">
+                        <i class="fa-solid fa-calendar"></i>
+                    </a>
+                </div>
+            </div>
+        </div> <div class="nav-bar">
             <a href="{{ url_for('dashboard') }}" class="exit-btn">Exit</a>
-    </div>
-    </div>
+        </div>
 
-
-    <div class="analytics-container">
-        <h1 class="page-title">Analytics</h1>
-        <div class="analytics-grid">
+        <div class="analytics-container">
+            <h1 class="page-title">Analytics</h1>
             
-            <div class="card">
-                <h3>Completed</h3>
-                <p class="task-count">{{ completed }} tasks</p>
-                <p class="percentage">{{ completed_pct }}%</p>
+            <div class="analytics-grid">
+                <div class="card">
+                    <h3>Completed</h3>
+                    <p class="task-count">{{ completed }} tasks</p>
+                    <p class="percentage">{{ completed_pct }}%</p>
+                </div>
+
+                <div class="card">
+                    <h3>Ongoing</h3>
+                    <p class="task-count">{{ ongoing }} tasks</p>
+                    <p class="percentage">{{ ongoing_pct }}%</p>
+                </div>
+
+                <div class="card">
+                    <h3>To Do</h3>
+                    <p class="task-count">{{ todo }} tasks</p>
+                    <p class="percentage">{{ todo_pct }}%</p>
+                </div>
             </div>
 
-
-            <div class="card">
-                <h3>Ongoing</h3>
-                <p class="task-count">{{ ongoing }} tasks</p>
-                <p class="percentage">{{ ongoing_pct }}%</p>
+            <div class="card overall-card" style="margin-top: 20px;">
+                <h3>Overall Progress</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ completed_pct }}%;">
+                        {{ completed_pct }}%
+                    </div>
+                </div>
             </div>
-
-
-            <div class="card">
-                <h3>To Do</h3>
-                <p class="task-count">{{ todo }} tasks</p>
-                <p class="percentage">{{ todo_pct }}%</p>
-            </div>
-        </div>
-    
-    </div>
-    
-    <div class="card overall-card">
-        
-        <h3>Overall Progress</h3>
-        
-        <div class="progress-bar">
-            <div class="progress-fill"
-            style="width: {{ completed_pct }}%;">
-            {{ completed_pct }}%
-        </div>
-    </div>
-</div>
-</body>
+            
+        </div> </div> </body>
 </html>
