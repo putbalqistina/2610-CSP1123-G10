@@ -1,16 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Assignment</title>
-
-<link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <meta charset="UTF-8">
+    <title>Assignment</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
 </head>
 
 <body>
 
- <div class="dashboard">
+    <div class="dashboard">
 
         <div class="topbar">
             <div class="brand">
@@ -20,50 +19,44 @@
                 </a>
             </div>
             
-
             <div class="search-container" style="flex-grow: 1; display: flex; justify-content: center;">
-    <form action="{{ url_for('dashboard') }}" method="GET"
-          style="display: inline-flex; align-items: center;
-                 background: #fff;
-                 border: 1px solid #ccc;
-                 border-radius: 20px;
-                 padding: 5px 15px;
-                 width: 100%;
-                 max-width: 400px;">
+                <form action="{{ url_for('dashboard') }}" method="GET"
+                      style="display: inline-flex; align-items: center;
+                             background: #fff;
+                             border: 1px solid #ccc;
+                             border-radius: 20px;
+                             padding: 5px 15px;
+                             width: 100%;
+                             max-width: 400px;">
 
-        {% if not code %}
-           <input type="hidden" name="subject_filter" value="{{ request.args.get('subject_filter', 'All') }}">
-        {% endif %}
+                    {% if not code %}
+                        <input type="hidden" name="subject_filter" value="{{ request.args.get('subject_filter', 'All') }}">
+                    {% endif %}
 
-        <input 
-            type="text" 
-            name="search" 
-            placeholder="{% if code %}Search assignments in {{ code }}...{% else %}Search assignments or subjects...{% endif %}" 
-            value="{{ search_query or '' }}" 
-            style="border: none;
-                   outline: none;
-                   width: 100%;
-                   font-size: 14px;
-                   background: transparent;
-                   color: #000;"
-        >
+                    <input type="text" 
+                           name="search" 
+                           placeholder="{% if code %}Search assignments in {{ code }}...{% else %}Search assignments or subjects...{% endif %}" 
+                           value="{{ search_query or '' }}" 
+                           style="border: none;
+                                  outline: none;
+                                  width: 100%;
+                                  font-size: 14px;
+                                  background: transparent;
+                                  color: #000;"
+                    >
 
-        <button type="submit"
-                style="background: none;
-                       border: none;
-                       cursor: pointer;
-                       color: #555;">
-            <i class="fa-solid fa-magnifying-glass"></i>
-        </button>
+                    <button type="submit"
+                            style="background: none;
+                                   border: none;
+                                   cursor: pointer;
+                                   color: #555;">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                    </button>
 
-    </form>
-</div>
+                </form>
+            </div>
             
-
-                
-
-
-
+            <div style="display: flex; align-items: center; gap: 15px;">
                 <div class="settings-link">
                     <a href="/editprofile" class="topbar-btn"><i class="fa-solid fa-gear"></i></a>    
                 </div>
@@ -78,207 +71,212 @@
                     <a href="{{ url_for('calendar_view') }}" class="topbar-btn"><i class="fa-solid fa-calendar"></i></a>
                 </div>
 
-
                 <div class="personal-chat-link">
                     <a href="{{ url_for('personal_chat') }}" class="topbar-btn"><i class="fa-solid fa-comments"></i></a>
                 </div>
-
             </div>
         </div>
 
+        <h1>{{ title }}</h1>
 
+        <div class="assignment-layout">
 
-    <h1>{{ title }}</h1>
+            <div class="left-side">
+                <div class="card">
+                    <h3>Assignment Description</h3>
+                    <form method="POST">
+                        <textarea name="description" style="width: 100%; box-sizing: border-box; height: 80px; resize: none; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;">{{ description }}</textarea>
+                        <button type="submit" class="btn btn-save">Save</button>
+                    </form>
+                </div>
+                
+                <div class="card">
+                    <h3>Assignment Status</h3>
+                    <form method="POST">
+                        <select name="status" style="width:100%; padding:8px; margin:10px 0;">
+                            <option value="to_do" {% if status == "to_do" %}selected{% endif %}>📝 To Do</option>
+                            <option value="ongoing" {% if status == "ongoing" %}selected{% endif %}>⏳ Ongoing</option>
+                            <option value="completed" {% if status == "completed" %}selected{% endif %}>✅ Completed</option>
+                        </select>
+                        <button type="submit" class="btn btn-save">Update Status</button>
+                    </form>
+                </div>
 
-    <div class="assignment-layout" >
+                <div class="card" style="margin-bottom:15px;">
+                    <h3>Activity Log</h3>
+                    {% for log in logs %}
+                        <div style="margin-bottom:10px;">
+                            <p>{{ log["activity"] }}</p>
+                            <small>{{ log["timestamp"] }}</small>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
 
-     <div class="left-side">
-        <div class="card">
-            <h3>Assignment Description</h3>
-              <form method="POST">
-                <textarea name="description" style="width: 100%; box-sizing: border-box; height: 80px; resize: none; padding: 8px; border: 1px solid #ccc; border-radius: 5px; font-family: inherit;">{{ description }}</textarea>
-                <button type="submit" class="btn btn-save">Save</button>
-               </form>
-        </div>
+            <div class="right-side">
+                <div class="card" style="margin-bottom:15px;">
+                    <h3>Comments</h3>
+                    {% for comment in comments %}
+                        <p>• {{ comment }}</p>
+                    {% endfor %}
+                    
+                    <form method="POST">
+                        <input type="text" name="comment" placeholder="Add note..." style="width:100%">
+                        <button type="submit" class="btn btn-add">Add</button>
+                    </form>
+                </div>
             
-        <div class="card">
-            <h3>Assignment Status</h3>
-            <form method="POST">
-                <select name="status" style="width:100%; padding:8px; margin:10px 0;">
-                    <option value="to_do" {% if status == "to_do" %}selected{% endif %}>📝 To Do</option>
-                    <option value="ongoing" {% if status == "ongoing" %}selected{% endif %}>⏳ Ongoing</option>
-                    <option value="completed" {% if status == "completed" %}selected{% endif %}>✅ Completed</option>
-                </select>
-                <button type="submit" class="btn btn-save">Update Status</button>
-            </form>
-         </div>
+                <div class="card">
+                    <h3>Attachment</h3>
+                    {% if attachment %}
+                        {% for file in attachment %}
+                            <div class="file-box">
+                                <a href="{{ url_for('uploaded_file', filename=file) }}" target="_blank">
+                                    {{ file }}
+                                </a>
+                                <a href="{{ url_for('delete_file', filename=file) }}" class="btn btn-delete">
+                                    Delete
+                                </a>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p>No file uploaded</p>
+                    {% endif %}
 
-         <div class="card" style="margin-bottom:15px;">
-                <h3>Activity Log</h3>
-                {% for log in logs %}
+                    {% if attachment|length < 3 %}
+                        <form method="POST" enctype="multipart/form-data">
+                            <input type="file" name="file">
+                            <button type="submit" class="btn btn-upload">
+                                Upload
+                            </button>
+                        </form>
+                    {% else %}
+                        <p>Maximum 3 files uploaded.</p>
+                    {% endif %}
+                </div>
+
+                <div class="card" style="margin-bottom:15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">Members</h3>
+                        <a href="{{ url_for('add_NewMember', assignment_id=assignment_id) }}" class="addNewMember-btn" title="Add New Member">+</a>
+                    </div>
+                    {% for member in members %}
+                        <div onclick="openProfileModal(this)" 
+                             data-username="{{ member['username'] }}"
+                             data-fullname="{{ member['full_name'] if member['full_name'] else 'No Name Set' }}"
+                             data-bio="{{ member['bio'] if member['bio'] else 'No bio added yet.' }}"
+                             data-gender="{{ member['gender'] if member['gender'] else 'Not specified' }}"
+                             data-pic="{% if member['profile_pic'] %}{{ url_for('uploaded_file', filename=member['profile_pic']) }}{% else %}https://ui-avatars.com/api/?name={{ member['username'] }}&background=random{% endif %}"
+                             style="display:flex; align-items:center; gap:15px; margin-bottom:15px; cursor: pointer;">
+                            
+                            {% if member['profile_pic'] %}
+                                <img src="{{ url_for('uploaded_file', filename=member['profile_pic']) }}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border: 2px solid #ccc;">
+                            {% else %}
+                                <img src="https://ui-avatars.com/api/?name={{ member['username'] }}&background=random" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border: 2px solid #ccc;">
+                            {% endif %}
+
+                            <strong>{{ member['username'] }}</strong>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="card" style="margin-bottom:15px;">
+                    <h3>Group Chat</h3>
                     <div style="margin-bottom:10px;">
-                        <p>{{ log["activity"] }}</p>
-                        <small>{{ log["timestamp"] }}</small>
+                        <a href="{{ url_for('chat', assignment_id=assignment_id) }}">
+                            <button class="btn btn-save" title="Group Chat">Chat</button>
+                        </a>
                     </div>
-                {% endfor %}
-          </div>
-     </div>
-
-            
-    <div class="right-side">
-        <div class="card" style="margin-bottom:15px;">
-            <h3>Comments</h3>
-            {% for comment in comments %}
-            <p>• {{ comment }}</p>
-            {% endfor %}
-            
-            <form method="POST">
-                <input type="text" name="comment" placeholder="Add note..." style="width:100%">
-                <button type="submit" class="btn btn-add">Add</button>
-            </form>
-    </div>
-    
-    
-    <div class="card">
-        
-        <h3>Attachment</h3>
-        
-        {% if attachment %}
-        {% for file in attachment %}
-        
-        <div class="file-box">
-            
-            <a href="{{ url_for('uploaded_file', filename=file) }}" target="_blank">
-                {{ file }}
-            </a>
-            
-            <a href="{{ url_for('delete_file', filename=file) }}" class="btn btn-delete">
-                Delete
-            </a>
-        </div>
-        
-        {% endfor %}
-        {% else %}
-        <p>No file uploaded</p>
-        {% endif %}
-        {% if attachment|length < 3 %}
-        
-        <form method="POST" enctype="multipart/form-data">
-            <input type="file" name="file">
-            <button type="submit" class="btn btn-upload">
-                Upload
-            </button>
-        </form>
-        {% else %}
-        <p>Maximum 3 files uploaded.</p>
-        {% endif %}
-    </div>
-
-
-            <div class="card" style="margin-bottom:15px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="margin: 0;">Members</h3>
-                    <a href="{{ url_for('add_NewMember', assignment_id=assignment.id) }}" class="addNewMember-btn" title="Add New Member">+</a>
                 </div>
-                 {% for member in members %}
-                    <div onclick="openProfileModal(this)" 
-                         data-username="{{ member['username'] }}"
-                         data-fullname="{{ member['full_name'] if member['full_name'] else 'No Name Set' }}"
-                         data-bio="{{ member['bio'] if member['bio'] else 'No bio added yet.' }}"
-                         data-gender="{{ member['gender'] if member['gender'] else 'Not specified' }}"
-                         data-pic="{% if member['profile_pic'] %}{{ url_for('uploaded_file', filename=member['profile_pic']) }}{% else %}https://ui-avatars.com/api/?name={{ member['username'] }}&background=random{% endif %}"
-                         style="display:flex; align-items:center; gap:15px; margin-bottom:15px; cursor: pointer;">
-                        
-                        {% if member['profile_pic'] %}
-                            <img src="{{ url_for('uploaded_file', filename=member['profile_pic']) }}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border: 2px solid #ccc;">
-                        {% else %}
-                            <img src="https://ui-avatars.com/api/?name={{ member['username'] }}&background=random" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border: 2px solid #ccc;">
-                        {% endif %}
-
-                        <strong>{{ member['username'] }}</strong>
-                    </div>
-                {% endfor %}
             </div>
-        
 
-       <div class="card" style="margin-bottom:15px;">
-               <h3>Group Chat</h3>
-    
-                <div style="margin-bottom:10px;">
-                    <a href="{{ url_for('chat', assignment_id=assignment_id) }}">
-                       <button class="btn btn-save" title="Group Chat">Chat</button>
-                    </a>
-                </div>
-        </div>
-</div>
-
-
-<div id="profileModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
-    <div style="background-color: white; padding: 30px; border-radius: 20px; width: 350px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.2); position: relative; font-family: sans-serif;">
-        
-        <span onclick="closeProfileModal()" style="position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #aaa;">&times;</span>
-        
-        <div style="width: 100px; height: 100px; margin: 0 auto 15px auto; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 3px solid #f3f3f3;">
-            <img id="modalPic" src="" style="width: 100%; height: 100%; object-fit: cover;">
-        </div>
-        
-        <h2 id="modalUsername" style="margin: 5px 0; color: #333; font-size: 1.4rem;"></h2>
-        <p id="modalFullName" style="margin: 0; font-size: 0.9rem; color: #777;"></p>
-        
-        <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
-        
-        <div style="text-align: left; background-color: #fafafa; padding: 12px; border-radius: 10px; min-height: 50px; margin-bottom: 10px;">
-            <strong style="font-size: 0.85rem; color: #555; display: block; margin-bottom: 5px;">Bio:</strong>
-            <p id="modalBio" style="margin: 0; font-size: 0.9rem; color: #444; font-style: italic; line-height: 1.4;"></p>
         </div>
 
-        <div style="text-align: left; background-color: #fafafa; padding: 12px; border-radius: 10px; min-height: 30px;">
-            <strong style="font-size: 0.85rem; color: #555; display: block; margin-bottom: 5px;">Gender:</strong>
-            <p id="modalGender" style="margin: 0; font-size: 0.9rem; color: #444; font-style: italic;"></p>
+    </div>
+
+    <div class="right">
+        <div id="pomodoroPopup" class="pomodoro-popup" style="display: none;">
+            <div class="popup-header">
+                <span id="mode">Work Time</span>
+                <button id="closeTimer">&times;</button>
+            </div>
+            <h1 id="timer">25:00</h1>
+            <div class="buttons">
+                <button onclick="startTimer()">Start</button>
+                <button onclick="pauseTimer()">Pause</button>
+                <button onclick="resetTimer()">Reset</button>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-function openProfileModal(element) {
-    var username = element.getAttribute('data-username');
-    var fullname = element.getAttribute('data-fullname');
-    var bio = element.getAttribute('data-bio');
-    var pic = element.getAttribute('data-pic');
-    var gender = element.getAttribute('data-gender');
+    <div id="profileModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); align-items: center; justify-content: center;">
+        <div style="background-color: white; padding: 30px; border-radius: 20px; width: 350px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.2); position: relative; font-family: sans-serif;">
+            
+            <span onclick="closeProfileModal()" style="position: absolute; top: 15px; right: 20px; font-size: 24px; cursor: pointer; color: #aaa;">&times;</span>
+            
+            <div style="width: 100px; height: 100px; margin: 0 auto 15px auto; border-radius: 50%; overflow: hidden; display: flex; align-items: center; justify-content: center; border: 3px solid #f3f3f3;">
+                <img id="modalPic" src="" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            
+            <h2 id="modalUsername" style="margin: 5px 0; color: #333; font-size: 1.4rem;"></h2>
+            <p id="modalFullName" style="margin: 0; font-size: 0.9rem; color: #777;"></p>
+            
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+            
+            <div style="text-align: left; background-color: #fafafa; padding: 12px; border-radius: 10px; min-height: 50px; margin-bottom: 10px;">
+                <strong style="font-size: 0.85rem; color: #555; display: block; margin-bottom: 5px;">Bio:</strong>
+                <p id="modalBio" style="margin: 0; font-size: 0.9rem; color: #444; font-style: italic; line-height: 1.4;"></p>
+            </div>
 
-    if (bio === "None" || bio === "") {
-        bio = "No bio added yet.";
-    }
-    if (fullname === "None" || fullname === "") {
-        fullname = "No Name Set";
-    }
-    if (gender === "None" || gender === "" || gender === null) {
-        gender = "Gender: Not specified";
-    } else {
-        gender = "Gender: " + gender;
-    }
+            <div style="text-align: left; background-color: #fafafa; padding: 12px; border-radius: 10px; min-height: 30px;">
+                <strong style="font-size: 0.85rem; color: #555; display: block; margin-bottom: 5px;">Gender:</strong>
+                <p id="modalGender" style="margin: 0; font-size: 0.9rem; color: #444; font-style: italic;"></p>
+            </div>
+        </div>
+    </div>
 
-    document.getElementById("modalUsername").innerText = "@" + username;
-    document.getElementById("modalFullName").innerText = fullname;
-    document.getElementById("modalBio").innerText = bio;
-    document.getElementById("modalPic").src = pic;
-    document.getElementById("modalGender").innerText = gender;
+    <script>
+        function openProfileModal(element) {
+            var username = element.getAttribute('data-username');
+            var fullname = element.getAttribute('data-fullname');
+            var bio = element.getAttribute('data-bio');
+            var pic = element.getAttribute('data-pic');
+            var gender = element.getAttribute('data-gender');
 
-    document.getElementById("profileModal").style.display = "flex";
-} 
+            if (bio === "None" || bio === "") {
+                bio = "No bio added yet.";
+            }
+            if (fullname === "None" || fullname === "") {
+                fullname = "No Name Set";
+            }
+            if (gender === "None" || gender === "" || gender === null) {
+                gender = "Gender: Not specified";
+            } else {
+                gender = "Gender: " + gender;
+            }
 
-function closeProfileModal() {  
-    document.getElementById("profileModal").style.display = "none";
-}
+            document.getElementById("modalUsername").innerText = "@" + username;
+            document.getElementById("modalFullName").innerText = fullname;
+            document.getElementById("modalBio").innerText = bio;
+            document.getElementById("modalPic").src = pic;
+            document.getElementById("modalGender").innerText = gender;
 
-window.onclick = function(event) {
-    var modal = document.getElementById("profileModal");
-    if (event.target == modal) {
-        modal.style.display = "none";
-    }
-}
-</script>
+            document.getElementById("profileModal").style.display = "flex";
+        } 
 
+        function closeProfileModal() {  
+            document.getElementById("profileModal").style.display = "none";
+        }
+
+        window.onclick = function(event) {
+            var modal = document.getElementById("profileModal");
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+    </script>
+
+    <script src="{{ url_for('static', filename='pomodoro.js') }}"></script>
+ 
 </body>
 </html>

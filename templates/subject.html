@@ -71,36 +71,58 @@
                 <div class="calendar-link">
                     <a href="{{ url_for('calendar_view') }}" class="topbar-btn"><i class="fa-solid fa-calendar"></i></a>
                 </div>
+            </div>
 
+            <div class="personal-chat-link">
+                    <a href="{{ url_for('personal_chat') }}" class="topbar-btn"><i class="fa-solid fa-comments"></i></a>
+                </div>
             </div>
         </div>
 
-        <h1>{{ code }} </h1>
+        </div>
+
+        <h1>{{ code }}</h1>
 
         <div class="cards">
-    {% for assignment in assignments %}
-        <div class="card-container" style="position: relative; display: block;">
-            
-             <a href="{{ url_for('assignment', id=assignment['id']) }}" style="text-decoration: none; color: inherit; display: block;">                <div class="card" style="padding-bottom: 45px; position: relative;">
-                    {{ assignment['title'] }}
-                    <div class="due-date"></div>
-                    <strong>Due Date:</strong> {{ assignment['deadline'] }}
-                </div>
-            </a>
-            
-            <form action="{{ url_for('delete_assignment', id=assignment['id']) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete the assignment \'{{ assignment['title'] }}\'?');" style="position: absolute; bottom: 15px; right: 15px; z-index: 10;">
-                <button type="submit" class="btn-delete-card" title="Delete Assignment">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-            </form>
+            {% for assignment in assignments %}
+                <div class="card-container" style="position: relative; display: block;">
+                    
+                    <a href="{{ url_for('assignment', id=assignment['id']) }}" style="text-decoration: none; color: inherit; display: block;">
+                        <div class="card" style="padding-bottom: 45px; position: relative;">
+                            {{ assignment['title'] }}
+                            <div class="due-date"></div>
+                            <strong>Due Date:</strong> {{ assignment['deadline'] }}
+                        </div>
+                    </a>
+                    
+                    <form action="{{ url_for('delete_assignment', id=assignment['id']) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete the assignment \'{{ assignment['title'] }}\'?');" style="position: absolute; bottom: 15px; right: 15px; z-index: 10;">
+                        <button type="submit" class="btn-delete-card" title="Delete Assignment">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </form>
 
+                </div>
+            {% else %}
+                <p class="no-data" style="grid-column: 1 / -1; color: #777; font-style: italic;">No assignments found match your search query.</p>
+            {% endfor %}
         </div>
-    {% else %}
-        <p class="no-data" style="grid-column: 1 / -1; color: #777; font-style: italic;">No assignments found match your search query.</p>
-    {% endfor %}
-</div>
 
     </div>
 
+    <div class="right">
+        <div id="pomodoroPopup" class="pomodoro-popup" style="display: none;">
+            <div class="popup-header">
+                <span id="mode">Work Time</span>
+                <button id="closeTimer">&times;</button>
+            </div>
+            <h1 id="timer">25:00</h1>
+            <div class="buttons">
+                <button onclick="startTimer()">Start</button>
+                <button onclick="pauseTimer()">Pause</button>
+                <button onclick="resetTimer()">Reset</button>
+            </div>
+        </div>
+    </div>
+         <script src="{{ url_for('static', filename='pomodoro.js') }}"></script>
 </body>
 </html>

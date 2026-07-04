@@ -40,26 +40,28 @@
                 </form>
             </div>
 
-            <div class="topbar-actions" style="display: flex; align-items: center; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 15px;">
                 <div class="settings-link">
-                    <a href="/editprofile" class="topbar-btn">
-                        <i class="fa-solid fa-gear"></i>
-                    </a>    
+                    <a href="/editprofile" class="topbar-btn"><i class="fa-solid fa-gear"></i></a>    
                 </div>
+                
 
-                <button id="openTimer" class="topbar-btn">
-                    <i class="fa-solid fa-stopwatch"></i>
-                </button>
+                <button id="openTimer" class="topbar-btn"><i class="fa-solid fa-stopwatch"></i></button>
 
                 <div class="calendar-link">
-                    <a href="{{ url_for('calendar_view') }}" class="topbar-btn">
-                        <i class="fa-solid fa-calendar"></i>
-                    </a>
+                    <a href="{{ url_for('calendar_view') }}" class="topbar-btn"><i class="fa-solid fa-calendar"></i></a>
+                </div>
+
+                <div class="personal-chat-link">
+                    <a href="{{ url_for('personal_chat') }}" class="topbar-btn"><i class="fa-solid fa-comments"></i></a>
                 </div>
             </div>
+        </div>
+
         </div> <div class="nav-bar">
             <a href="{{ url_for('dashboard') }}" class="exit-btn">Exit</a>
         </div>
+        
 
         <div class="analytics-container">
             <h1 class="page-title">Analytics</h1>
@@ -93,5 +95,23 @@
                 </div>
             </div>
             
-        </div> </div> </body>
+        </div> </div> 
+
+        <div class="right">
+        <div id="pomodoroPopup" class="pomodoro-popup" style="display: none;">
+            <div class="popup-header">
+                <span id="mode">Work Time</span>
+                <button id="closeTimer">&times;</button>
+            </div>
+            <h1 id="timer">25:00</h1>
+            <div class="buttons">
+                <button onclick="startTimer()">Start</button>
+                <button onclick="pauseTimer()">Pause</button>
+                <button onclick="resetTimer()">Reset</button>
+            </div>
+        </div>
+    </div>
+             <script src="{{ url_for('static', filename='pomodoro.js') }}"></script>
+
+    </body>
 </html>

@@ -370,8 +370,8 @@ textarea {
 .pomodoro-popup {
     display: none;
 
-    position: absolute;
-    top: 50px;
+    position: fixed;
+    top: 75px;
     right: 50px;
 
     width: 260px;

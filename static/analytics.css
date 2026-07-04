@@ -386,3 +386,23 @@ body {
     align-items: center;
 
 }
+
+/* popup kecil */
+.pomodoro-popup {
+    display: none;
+
+    position: fixed;
+    top: 75px;
+    right: 70px;
+
+    width: 260px;
+
+    background: white;
+    padding: 20px;
+
+    border-radius: 15px;
+
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+
+    z-index: 999;
+}

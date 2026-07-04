@@ -382,8 +382,6 @@ def add_assignment():
     error_msg = None
 
     if request.method == 'POST':
-        conn = sqlite3.connect('database.db')
-        cursor = conn.cursor()
         subject = request.form.get('subject')
         title = request.form.get('title')
         deadline = request.form.get('deadline')
@@ -393,12 +391,14 @@ def add_assignment():
         is_shared = 1 if assignment_type == 'shared' else 0
         
         conn = get_db()
+        # Setrow_factory agar kita boleh akses data menggunakan nama kolum (contoh: user_found["email"])
+        conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
 
         # JIKA PILIH SHARED: Semak dahulu jika akaun kawan wujud di dalam sistem
         invited_email = None
         if is_shared == 1 and friend_input:
-            user_found = conn.execute(
+            user_found = cursor.execute(
                 "SELECT email FROM users WHERE LOWER(email) = LOWER(?) OR LOWER(username) = LOWER(?)", 
                 (friend_input, friend_input)
             ).fetchone()
@@ -417,27 +417,26 @@ def add_assignment():
                VALUES (?, ?, ?, ?, 'to_do', ?, ?)""",
             (subject, title, deadline, user_email, is_shared, user_email)
         )
-
         
         assignment_id = cursor.lastrowid
         
-        # 2. Jika jenis berkumpulan, daftarkan pencipta & kawan ke table assignment_members
-        if is_shared == 1:
-            # Masukkan pencipta tugasan (anda)
-            cursor.execute(
-                "INSERT INTO assignment_members (assignment_id, member_email) VALUES (?, ?)",
-                (assignment_id, user_email)
-            )
-            # Masukkan kawan yang dijemput (jika ada input dimasukkan)
-            if invited_email:
-                try:
+        # 2. SENTIASA masukkan pencipta tugasan (anda) ke jadual assignment_members (Personal & Shared)
+        cursor.execute(
+            "INSERT INTO assignment_members (assignment_id, member_email) VALUES (?, ?)",
+            (assignment_id, user_email)
+        )
+        
+        # 3. Masukkan kawan yang dijemput HANYA jika ia adalah jenis berkumpulan (shared)
+        if is_shared == 1 and invited_email:
+            try:
+                # Pastikan tidak memasukkan emel sendiri dua kali sekiranya ter-input emel sendiri
+                if invited_email.lower() != user_email.lower():
                     cursor.execute(
                         "INSERT INTO assignment_members (assignment_id, member_email) VALUES (?, ?)",
                         (assignment_id, invited_email)
                     )
-                except sqlite3.IntegrityError:
-                    pass # Abaikan ralat jika ter-input email sendiri
-            
+            except sqlite3.IntegrityError:
+                pass # Abaikan ralat jika rekod bertindih/sudah wujud
 
         conn.commit()
         conn.close()
@@ -1182,18 +1181,26 @@ def add_NewMember():
     if 'user' not in session:
         return redirect(url_for('login'))
 
-    user_email = session['user']
+    user_email = session['user'] # Emel diri sendiri yang sedang login
     
     # 1. Ambil assignment_id secara dinamik daripada URL (GET) atau Form (POST)
     assignment_id = request.args.get('assignment_id') or request.form.get('assignment_id')
 
     if request.method == 'POST':
-        invited_email = request.form.get('email') # Guna 'email' untuk sepadan dengan borang HTML
+        # guna request.form.get() untuk elakkan KeyError jika tiada input
+        invited_email = request.form.get('email', '').strip().lower() 
+
+        if invited_email == user_email.lower():
+            return render_template(
+                'add_NewMember.html', 
+                error_msg="You cannot add your own email address as a new member.", 
+                assignment_id=assignment_id
+            )
 
         conn = get_db()
         cursor = conn.cursor()
 
-        # 2. Semak jika emel yang dijemput wujud dalam sistem
+        # 2`. Semak jika emel yang dijemput wujud dalam sistem`
         cursor.execute("SELECT email FROM users WHERE email = ?", (invited_email,))
         invited_user = cursor.fetchone()
 
@@ -1201,12 +1208,12 @@ def add_NewMember():
             conn.close()
             return render_template('add_NewMember.html', error_msg="The email entered is not registered in AssignMate.", assignment_id=assignment_id)
 
-        # 3. Pastikan context assignment_id tidak kosong
+        # 3. Semak jika assignment_id wujud
         if not assignment_id:
             conn.close()
             return render_template('add_NewMember.html', error_msg="Error: No specific assignment/subject was targeted.", assignment_id=assignment_id)
 
-        # 4. Masukkan ahli baru ke dalam jadual 'assignment_members' KHAS untuk ID ini sahaja
+        # 4. Semak jika emel yang dijemput sudah wujud dalam assignment_members untuk tugasan ini
         try:
             cursor.execute(
                 "INSERT INTO assignment_members (assignment_id, member_email) VALUES (?, ?)",
@@ -1219,10 +1226,10 @@ def add_NewMember():
 
         conn.close()
         
-        # Selesai tambah, hantar pengguna kembali ke dashboard utama
-        return redirect(url_for('dashboard'))
+        # 5. Redirect ke dashboard selepas berjaya menambah ahli baru
+        return redirect(url_for('assignment', id=assignment_id))
 
-    # Jika akses biasa (GET), hantar nilai assignment_id ke template borang
+    # Jika request method adalah GET, hanya render template untuk form tambah ahli baru
     return render_template('add_NewMember.html', assignment_id=assignment_id)
 
 
