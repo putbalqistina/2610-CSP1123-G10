@@ -19,42 +19,7 @@
                 </a>
             </div>
             
-            <div class="search-container" style="flex-grow: 1; display: flex; justify-content: center;">
-                <form action="{{ url_for('dashboard') }}" method="GET"
-                      style="display: inline-flex; align-items: center;
-                             background: #fff;
-                             border: 1px solid #ccc;
-                             border-radius: 20px;
-                             padding: 5px 15px;
-                             width: 100%;
-                             max-width: 400px;">
-
-                    {% if not code %}
-                        <input type="hidden" name="subject_filter" value="{{ request.args.get('subject_filter', 'All') }}">
-                    {% endif %}
-
-                    <input type="text" 
-                           name="search" 
-                           placeholder="{% if code %}Search assignments in {{ code }}...{% else %}Search assignments or subjects...{% endif %}" 
-                           value="{{ search_query or '' }}" 
-                           style="border: none;
-                                  outline: none;
-                                  width: 100%;
-                                  font-size: 14px;
-                                  background: transparent;
-                                  color: #000;"
-                    >
-
-                    <button type="submit"
-                            style="background: none;
-                                   border: none;
-                                   cursor: pointer;
-                                   color: #555;">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                    </button>
-
-                </form>
-            </div>
+            
             
             <div style="display: flex; align-items: center; gap: 15px;">
                 <div class="settings-link">
